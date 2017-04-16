@@ -6,17 +6,17 @@ environment:
   SCCACHE_DIGEST: f808afabb4a4eb1d7112bcb3fa6be03b61e93412890c88e177c667eb37f46353d7ec294e559b16f9f4b5e894f2185fe7670a0df15fd064889ecbd80f0c34166c
   matrix:
   # 32/64 bit MSVC tests
-  - MSYS_BITS: 64
-    RUST_CONFIGURE_ARGS: --build=x86_64-pc-windows-msvc
-    SCRIPT: python x.py test
-  - MSYS_BITS: 32
-    RUST_CONFIGURE_ARGS: --build=i686-pc-windows-msvc --target=i586-pc-windows-msvc
-    SCRIPT: python x.py test --host i686-pc-windows-msvc --target i686-pc-windows-msvc
+  # - MSYS_BITS: 64
+  #   RUST_CONFIGURE_ARGS: --build=x86_64-pc-windows-msvc
+  #   SCRIPT: python x.py test
+  # - MSYS_BITS: 32
+  #   RUST_CONFIGURE_ARGS: --build=i686-pc-windows-msvc --target=i586-pc-windows-msvc
+  #   SCRIPT: python x.py test --host i686-pc-windows-msvc --target i686-pc-windows-msvc
 
   # MSVC aux tests
-  - MSYS_BITS: 64
-    RUST_CHECK_TARGET: check-aux
-    RUST_CONFIGURE_ARGS: --build=x86_64-pc-windows-msvc
+  # - MSYS_BITS: 64
+  #   RUST_CHECK_TARGET: check-aux
+  #   RUST_CONFIGURE_ARGS: --build=x86_64-pc-windows-msvc
 
   # 32/64-bit MinGW builds.
   #
@@ -37,45 +37,45 @@ environment:
     MINGW_URL: https://s3.amazonaws.com/rust-lang-ci/rust-ci-mirror
     MINGW_ARCHIVE: i686-6.2.0-release-posix-dwarf-rt_v5-rev1.7z
     MINGW_DIR: mingw32
-  - MSYS_BITS: 64
-    SCRIPT: python x.py test
-    RUST_CONFIGURE_ARGS: --build=x86_64-pc-windows-gnu --enable-ninja
-    MINGW_URL: https://s3.amazonaws.com/rust-lang-ci/rust-ci-mirror
-    MINGW_ARCHIVE: x86_64-6.2.0-release-posix-seh-rt_v5-rev1.7z
-    MINGW_DIR: mingw64
+  # - MSYS_BITS: 64
+  #   SCRIPT: python x.py test
+  #   RUST_CONFIGURE_ARGS: --build=x86_64-pc-windows-gnu --enable-ninja
+  #   MINGW_URL: https://s3.amazonaws.com/rust-lang-ci/rust-ci-mirror
+  #   MINGW_ARCHIVE: x86_64-6.2.0-release-posix-seh-rt_v5-rev1.7z
+  #   MINGW_DIR: mingw64
 
   # 32/64 bit MSVC and GNU deployment
-  - RUST_CONFIGURE_ARGS: >
-      --build=x86_64-pc-windows-msvc
-      --enable-extended
-    SCRIPT: python x.py dist
-    DEPLOY: 1
-  - RUST_CONFIGURE_ARGS: >
-      --build=i686-pc-windows-msvc
-      --target=i586-pc-windows-msvc
-      --enable-extended
-    SCRIPT: python x.py dist
-    DEPLOY: 1
-  - MSYS_BITS: 32
-    RUST_CONFIGURE_ARGS: --build=i686-pc-windows-gnu --enable-extended --enable-ninja
-    SCRIPT: python x.py dist
-    MINGW_URL: https://s3.amazonaws.com/rust-lang-ci/rust-ci-mirror
-    MINGW_ARCHIVE: i686-6.2.0-release-posix-dwarf-rt_v5-rev1.7z
-    MINGW_DIR: mingw32
-    DEPLOY: 1
-  - MSYS_BITS: 64
-    SCRIPT: python x.py dist
-    RUST_CONFIGURE_ARGS: --build=x86_64-pc-windows-gnu --enable-extended --enable-ninja
-    MINGW_URL: https://s3.amazonaws.com/rust-lang-ci/rust-ci-mirror
-    MINGW_ARCHIVE: x86_64-6.2.0-release-posix-seh-rt_v5-rev1.7z
-    MINGW_DIR: mingw64
-    DEPLOY: 1
+  # - RUST_CONFIGURE_ARGS: >
+  #     --build=x86_64-pc-windows-msvc
+  #     --enable-extended
+  #   SCRIPT: python x.py dist
+  #   DEPLOY: 1
+  # - RUST_CONFIGURE_ARGS: >
+  #     --build=i686-pc-windows-msvc
+  #     --target=i586-pc-windows-msvc
+  #     --enable-extended
+  #   SCRIPT: python x.py dist
+  #   DEPLOY: 1
+  # - MSYS_BITS: 32
+  #   RUST_CONFIGURE_ARGS: --build=i686-pc-windows-gnu --enable-extended --enable-ninja
+  #   SCRIPT: python x.py dist
+  #   MINGW_URL: https://s3.amazonaws.com/rust-lang-ci/rust-ci-mirror
+  #   MINGW_ARCHIVE: i686-6.2.0-release-posix-dwarf-rt_v5-rev1.7z
+  #   MINGW_DIR: mingw32
+  #   DEPLOY: 1
+  # - MSYS_BITS: 64
+  #   SCRIPT: python x.py dist
+  #   RUST_CONFIGURE_ARGS: --build=x86_64-pc-windows-gnu --enable-extended --enable-ninja
+  #   MINGW_URL: https://s3.amazonaws.com/rust-lang-ci/rust-ci-mirror
+  #   MINGW_ARCHIVE: x86_64-6.2.0-release-posix-seh-rt_v5-rev1.7z
+  #   MINGW_DIR: mingw64
+  #   DEPLOY: 1
 
   # "alternate" deployment, see .travis.yml for more info
-  - MSYS_BITS: 64
-    RUST_CONFIGURE_ARGS: --build=x86_64-pc-windows-msvc --enable-extended
-    SCRIPT: python x.py dist
-    DEPLOY_ALT: 1
+  # - MSYS_BITS: 64
+  #   RUST_CONFIGURE_ARGS: --build=x86_64-pc-windows-msvc --enable-extended
+  #   SCRIPT: python x.py dist
+  #   DEPLOY_ALT: 1
 
 matrix:
   fast_finish: true
@@ -147,7 +147,7 @@ cache:
 
 branches:
   only:
-    - auto
+    - llvm40-app
 
 before_deploy:
   - ps: |
