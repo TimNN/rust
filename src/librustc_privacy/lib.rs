@@ -22,7 +22,7 @@
 #![cfg_attr(stage0, feature(rustc_private))]
 #![cfg_attr(stage0, feature(staged_api))]
 
-extern crate rustc;
+#[macro_use] extern crate rustc;
 #[macro_use] extern crate syntax;
 extern crate syntax_pos;
 
@@ -948,8 +948,13 @@ impl<'a, 'tcx: 'a> TypeVisitor<'tcx> for SearchInterfaceForPrivateItemsVisitor<'
         if let Some(def_id) = ty_def_id {
             // Non-local means public (private items can't leave their crate, modulo bugs)
             if let Some(node_id) = self.tcx.hir.as_local_node_id(def_id) {
-                let item = self.tcx.hir.expect_item(node_id);
-                let vis = ty::Visibility::from_hir(&item.vis, node_id, self.tcx);
+                let item_vis = match self.tcx.hir.find(node_id) {
+                    Some(hir::map::NodeItem(item)) => &item.vis,
+                    Some(hir::map::NodeForeignItem(item)) => &item.vis,
+                    _ => bug!("expected (foreign) item, found {}", self.tcx.hir.node_to_string(node_id)),
+                };
+
+                let vis = ty::Visibility::from_hir(item_vis, node_id, self.tcx);
 
                 if !vis.is_at_least(self.min_visibility, self.tcx) {
                     self.min_visibility = vis;
