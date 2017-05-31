@@ -101,6 +101,9 @@ impl<'a, 'gcx, 'tcx> VariantDef {
                     f.uninhabited_from(visited, tcx, substs, true)
                 }))
             },
+            AdtKind::OpaqueTy => {
+                DefIdForest::empty()
+            }
         }
     }
 }

@@ -592,6 +592,7 @@ pub fn type_metadata<'a, 'tcx>(cx: &CrateContext<'a, 'tcx>,
                                     unique_type_id,
                                     usage_site_span).finalize(cx)
             }
+            AdtKind::OpaqueTy => panic!("TODO"),
             AdtKind::Enum => {
                 prepare_enum_metadata(cx,
                                     t,

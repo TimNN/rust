@@ -1556,6 +1556,7 @@ pub enum TypeKind {
     Static,
     Struct,
     Union,
+    OpaqueTy,
     Trait,
     Variant,
     Typedef,
@@ -1860,6 +1861,7 @@ impl<'tcx> Clean<Type> for ty::Ty<'tcx> {
                     AdtKind::Struct => TypeKind::Struct,
                     AdtKind::Union => TypeKind::Union,
                     AdtKind::Enum => TypeKind::Enum,
+                    AdtKind::OpaqueTy => TypeKind::OpaqueTy,
                 };
                 inline::record_extern_fqn(cx, did, kind);
                 let path = external_path(cx, &cx.tcx.item_name(did).as_str(),

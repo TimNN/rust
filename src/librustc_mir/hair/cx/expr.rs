@@ -505,7 +505,7 @@ fn make_mirror_unadjusted<'a, 'gcx, 'tcx>(cx: &mut Cx<'a, 'gcx, 'tcx>,
             match expr_ty.sty {
                 ty::TyAdt(adt, substs) => {
                     match adt.adt_kind() {
-                        AdtKind::Struct | AdtKind::Union => {
+                        AdtKind::Struct | AdtKind::Union | AdtKind::OpaqueTy => {
                             let field_refs = field_refs(&adt.variants[0], fields);
                             ExprKind::Adt {
                                 adt_def: adt,

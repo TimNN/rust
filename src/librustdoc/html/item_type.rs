@@ -95,6 +95,7 @@ impl From<clean::TypeKind> for ItemType {
             clean::TypeKind::Struct   => ItemType::Struct,
             clean::TypeKind::Union    => ItemType::Union,
             clean::TypeKind::Enum     => ItemType::Enum,
+            clean::TypeKind::OpaqueTy => ItemType::OpaqueTy,
             clean::TypeKind::Function => ItemType::Function,
             clean::TypeKind::Trait    => ItemType::Trait,
             clean::TypeKind::Module   => ItemType::Module,

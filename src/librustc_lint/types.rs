@@ -535,6 +535,7 @@ impl<'a, 'tcx> ImproperCTypesVisitor<'a, 'tcx> {
                         }
                         FfiSafe
                     }
+                    AdtKind::OpaqueTy => FfiSafe,
                 }
             }
 

@@ -1297,6 +1297,7 @@ bitflags! {
         const IS_FUNDAMENTAL      = 1 << 2,
         const IS_UNION            = 1 << 3,
         const IS_BOX              = 1 << 4,
+        const IS_OPAQUE           = 1 << 5,
     }
 }
 
@@ -1385,7 +1386,7 @@ impl<'a, 'tcx> HashStable<StableHashingContext<'a, 'tcx>> for AdtDef {
 }
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
-pub enum AdtKind { Struct, Union, Enum }
+pub enum AdtKind { Struct, Union, Enum, OpaqueTy }
 
 bitflags! {
     #[derive(RustcEncodable, RustcDecodable, Default)]
@@ -1501,6 +1502,7 @@ impl<'a, 'gcx, 'tcx> AdtDef {
             AdtKind::Enum => flags = flags | AdtFlags::IS_ENUM,
             AdtKind::Union => flags = flags | AdtFlags::IS_UNION,
             AdtKind::Struct => {}
+            AdtKind::OpaqueTy => flags = flags | AdtFlags::IS_OPAQUE,
         }
         AdtDef {
             did: did,
@@ -1542,6 +1544,7 @@ impl<'a, 'gcx, 'tcx> AdtDef {
             AdtKind::Struct => "struct",
             AdtKind::Union => "union",
             AdtKind::Enum => "enum",
+            AdtKind::OpaqueTy => "opaque ty",
         }
     }
 
@@ -1550,6 +1553,7 @@ impl<'a, 'gcx, 'tcx> AdtDef {
             AdtKind::Struct => "struct",
             AdtKind::Union => "union",
             AdtKind::Enum => "variant",
+            AdtKind::OpaqueTy => bug!(),
         }
     }
 

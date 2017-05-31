@@ -230,6 +230,7 @@ impl<'a, 'gcx, 'tcx> InferCtxt<'a, 'gcx, 'tcx> {
                     AdtKind::Struct => Some(15),
                     AdtKind::Union => Some(16),
                     AdtKind::Enum => Some(17),
+                    AdtKind::OpaqueTy => Some(18),
                 },
                 ty::TyInfer(..) | ty::TyError => None
             }

@@ -44,6 +44,7 @@ impl From<AdtKind> for DataTypeKind {
             AdtKind::Struct => DataTypeKind::Struct,
             AdtKind::Enum => DataTypeKind::Enum,
             AdtKind::Union => DataTypeKind::Union,
+            AdtKind::OpaqueTy => DataTypeKind::OpaqueTy,
         }
     }
 }
@@ -53,6 +54,7 @@ pub enum DataTypeKind {
     Struct,
     Union,
     Enum,
+    OpaqueTy,
     Closure,
 }
 
@@ -126,7 +128,7 @@ impl CodeStats {
 
             let struct_like = match info.kind {
                 DataTypeKind::Struct | DataTypeKind::Closure => true,
-                DataTypeKind::Enum | DataTypeKind::Union => false,
+                DataTypeKind::Enum | DataTypeKind::Union | DataTypeKind::OpaqueTy => false,
             };
             for (i, variant_info) in info.variants.iter().enumerate() {
                 let VariantInfo { ref name, kind: _, align: _, size, ref fields } = *variant_info;

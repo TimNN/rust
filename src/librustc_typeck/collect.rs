@@ -632,6 +632,16 @@ fn adt_def<'a, 'tcx>(tcx: TyCtxt<'a, 'tcx, 'tcx>,
     let node_id = tcx.hir.as_local_node_id(def_id).unwrap();
     let item = match tcx.hir.get(node_id) {
         NodeItem(item) => item,
+        NodeForeignItem(item) => {
+            match item.node {
+                ForeignItemType => (),
+                _ => bug!(),
+            }
+
+            let repr = ReprOptions::new(tcx, def_id);
+
+            return tcx.alloc_adt_def(def_id, AdtKind::OpaqueTy, vec![], repr);
+        },
         _ => bug!()
     };
 
