@@ -422,6 +422,7 @@ impl<'tcx> EntryKind<'tcx> {
             EntryKind::ForeignMutStatic => Def::Static(did, true),
             EntryKind::Struct(_, _) => Def::Struct(did),
             EntryKind::Union(_, _) => Def::Union(did),
+            EntryKind::ForeignType => Def::OpaqueTy(did),
             EntryKind::Fn(_) |
             EntryKind::ForeignFn(_) => Def::Fn(did),
             EntryKind::Method(_) => Def::Method(did),

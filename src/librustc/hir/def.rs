@@ -39,6 +39,7 @@ pub enum Def {
     PrimTy(hir::PrimTy),
     TyParam(DefId),
     SelfTy(Option<DefId> /* trait */, Option<DefId> /* impl */),
+    OpaqueTy(DefId),
 
     // Value namespace
     Fn(DefId),
@@ -142,7 +143,7 @@ impl CtorKind {
 impl Def {
     pub fn def_id(&self) -> DefId {
         match *self {
-            Def::Fn(id) | Def::Mod(id) | Def::Static(id, _) |
+            Def::Fn(id) | Def::Mod(id) | Def::Static(id, _) | Def::OpaqueTy(id) |
             Def::Variant(id) | Def::VariantCtor(id, ..) | Def::Enum(id) | Def::TyAlias(id) |
             Def::AssociatedTy(id) | Def::TyParam(id) | Def::Struct(id) | Def::StructCtor(id, ..) |
             Def::Union(id) | Def::Trait(id) | Def::Method(id) | Def::Const(id) |
@@ -172,6 +173,7 @@ impl Def {
             Def::Enum(..) => "enum",
             Def::TyAlias(..) => "type alias",
             Def::AssociatedTy(..) => "associated type",
+            Def::OpaqueTy(..) => "opaque type",
             Def::Struct(..) => "struct",
             Def::StructCtor(.., CtorKind::Fn) => "tuple struct",
             Def::StructCtor(.., CtorKind::Const) => "unit struct",

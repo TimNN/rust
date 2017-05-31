@@ -35,7 +35,8 @@
                      "associatedtype",
                      "constant",
                      "associatedconstant",
-                     "union"];
+                     "union",
+                     "opaquetype"];
 
     function hasClass(elem, className) {
         if (elem && className && elem.className) {

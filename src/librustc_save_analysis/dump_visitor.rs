@@ -304,6 +304,7 @@ impl<'l, 'tcx: 'l, 'll, D: Dump + 'll> DumpVisitor<'l, 'tcx, 'll, D> {
             Def::Variant(..) |
             Def::Union(..) |
             Def::Enum(..) |
+            Def::OpaqueTy(..) |
             Def::TyAlias(..) |
             Def::Trait(_) => {
                 self.dumper.type_ref(TypeRefData {
@@ -1659,6 +1660,9 @@ impl<'l, 'tcx: 'l, 'll, D: Dump +'ll> Visitor<'l> for DumpVisitor<'l, 'tcx, 'll,
                 }
 
                 self.visit_ty(ty);
+            }
+            ast::ForeignItemKind::Type => {
+                panic!("TODO");
             }
         }
     }

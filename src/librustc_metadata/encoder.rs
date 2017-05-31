@@ -1360,6 +1360,7 @@ impl<'a, 'b: 'a, 'tcx: 'b> IsolatedEncoder<'a, 'b, 'tcx> {
             }
             hir::ForeignItemStatic(_, true) => EntryKind::ForeignMutStatic,
             hir::ForeignItemStatic(_, false) => EntryKind::ForeignImmStatic,
+            hir::ForeignItemType => EntryKind::ForeignType,
         };
 
         Entry {

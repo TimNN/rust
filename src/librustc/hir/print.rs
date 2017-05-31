@@ -489,6 +489,14 @@ impl<'a> State<'a> {
                 self.end()?; // end the head-ibox
                 self.end() // end the outer cbox
             }
+            hir::ForeignItemType => {
+                self.head(&visibility_qualified(&item.vis, "type"))?;
+                self.word_space("=")?;
+                self.print_name(item.name)?;
+                word(&mut self.s, ";")?;
+                self.end()?; // end the head-ibox
+                self.end() // end the outer cbox
+            }
         }
     }
 

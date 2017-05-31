@@ -164,6 +164,9 @@ impl<'l, 'tcx: 'l> SaveContext<'l, 'tcx> {
                     attributes: item.attrs.clone(),
                 }))
             }
+            ast::ForeignItemKind::Type => {
+                panic!("TODO");
+            }
         }
     }
 
@@ -659,6 +662,7 @@ impl<'l, 'tcx: 'l> SaveContext<'l, 'tcx> {
             Def::Variant(def_id, ..) |
             Def::Union(def_id) |
             Def::Enum(def_id) |
+            Def::OpaqueTy(def_id) |
             Def::TyAlias(def_id) |
             Def::AssociatedTy(def_id) |
             Def::Trait(def_id) |

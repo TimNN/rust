@@ -649,6 +649,7 @@ impl<'a, 'tcx> Visitor<'tcx> for Resolver<'a> {
                 HasTypeParameters(generics, ItemRibKind)
             }
             ForeignItemKind::Static(..) => NoTypeParameters,
+            ForeignItemKind::Type => NoTypeParameters,
         };
         self.with_type_parameter_rib(type_parameters, |this| {
             visit::walk_foreign_item(this, foreign_item);

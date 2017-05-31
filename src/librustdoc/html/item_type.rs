@@ -41,6 +41,7 @@ pub enum ItemType {
     Constant        = 17,
     AssociatedConst = 18,
     Union           = 19,
+    OpaqueTy        = 20,
 }
 
 
@@ -77,6 +78,7 @@ impl<'a> From<&'a clean::Item> for ItemType {
             clean::VariantItem(..)         => ItemType::Variant,
             clean::ForeignFunctionItem(..) => ItemType::Function, // no ForeignFunction
             clean::ForeignStaticItem(..)   => ItemType::Static, // no ForeignStatic
+            clean::ForeignTypeItem         => ItemType::OpaqueTy,
             clean::MacroItem(..)           => ItemType::Macro,
             clean::PrimitiveItem(..)       => ItemType::Primitive,
             clean::AssociatedConstItem(..) => ItemType::AssociatedConst,
@@ -113,6 +115,7 @@ impl ItemType {
             ItemType::Struct          => "struct",
             ItemType::Union           => "union",
             ItemType::Enum            => "enum",
+            ItemType::OpaqueTy        => "opaquetype",
             ItemType::Function        => "fn",
             ItemType::Typedef         => "type",
             ItemType::Static          => "static",
@@ -135,6 +138,7 @@ impl ItemType {
             ItemType::Struct |
             ItemType::Union |
             ItemType::Enum |
+            ItemType::OpaqueTy |
             ItemType::Module |
             ItemType::Typedef |
             ItemType::Trait |

@@ -385,6 +385,8 @@ pub enum ItemEnum {
     ForeignFunctionItem(Function),
     /// `static`s from an extern block
     ForeignStaticItem(Static),
+    /// `type`s from an extern block
+    ForeignTypeItem,
     MacroItem(Macro),
     PrimitiveItem(PrimitiveType),
     AssociatedConstItem(Type, Option<String>),
@@ -2681,6 +2683,9 @@ impl Clean<Item> for hir::ForeignItem {
                     mutability: if mutbl {Mutable} else {Immutable},
                     expr: "".to_string(),
                 })
+            }
+            hir::ForeignItemType => {
+                ForeignTypeItem
             }
         };
         Item {

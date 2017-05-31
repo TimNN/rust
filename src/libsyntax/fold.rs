@@ -1057,6 +1057,9 @@ pub fn noop_fold_foreign_item<T: Folder>(ni: ForeignItem, folder: &mut T) -> For
             ForeignItemKind::Static(t, m) => {
                 ForeignItemKind::Static(folder.fold_ty(t), m)
             }
+            ForeignItemKind::Type => {
+                ForeignItemKind::Type
+            }
         },
         span: folder.new_span(ni.span)
     }

@@ -5514,6 +5514,24 @@ impl<'a> Parser<'a> {
         })
     }
 
+    /// Parse an opaque type from a foreign module
+    fn parse_item_foreign_type(&mut self, vis: ast::Visibility, lo: Span, attrs: Vec<Attribute>)
+                                 -> PResult<'a, ForeignItem> {
+        self.expect_keyword(keywords::Type)?;
+
+        let ident = self.parse_ident()?;
+        let hi = self.span;
+        self.expect(&token::Semi)?;
+        Ok(ForeignItem {
+            ident: ident,
+            attrs: attrs,
+            node: ForeignItemKind::Type,
+            id: ast::DUMMY_NODE_ID,
+            span: lo.to(hi),
+            vis: vis
+        })
+    }
+
     /// Parse extern crate links
     ///
     /// # Examples
@@ -5979,6 +5997,10 @@ impl<'a> Parser<'a> {
         if self.check_keyword(keywords::Fn) {
             // FOREIGN FUNCTION ITEM
             return Ok(Some(self.parse_item_foreign_fn(visibility, lo, attrs)?));
+        }
+        if self.check_keyword(keywords::Type) {
+            // FOREIGN TYPE ITEM
+            return Ok(Some(self.parse_item_foreign_type(visibility, lo, attrs)?));
         }
 
         // FIXME #5668: this will occur for a macro invocation:

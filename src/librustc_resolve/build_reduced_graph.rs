@@ -418,6 +418,9 @@ impl<'a> Resolver<'a> {
             ForeignItemKind::Static(_, m) => {
                 Def::Static(self.definitions.local_def_id(item.id), m)
             }
+            ForeignItemKind::Type => {
+                Def::OpaqueTy(self.definitions.local_def_id(item.id))
+            }
         };
         let parent = self.current_module;
         let vis = self.resolve_visibility(&item.vis);

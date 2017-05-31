@@ -1796,6 +1796,7 @@ fn item_module(w: &mut fmt::Formatter, cx: &Context,
                 ItemType::Struct          => ("structs", "Structs"),
                 ItemType::Union           => ("unions", "Unions"),
                 ItemType::Enum            => ("enums", "Enums"),
+                ItemType::OpaqueTy        => ("opaque-types", "Opaque Types"),
                 ItemType::Function        => ("functions", "Functions"),
                 ItemType::Typedef         => ("types", "Type Definitions"),
                 ItemType::Static          => ("statics", "Statics"),
@@ -3302,9 +3303,9 @@ fn sidebar_module(fmt: &mut fmt::Formatter, _it: &clean::Item,
     // to print its headings
     for &myty in &[ItemType::Primitive, ItemType::Module, ItemType::Macro, ItemType::Struct,
                    ItemType::Enum, ItemType::Constant, ItemType::Static, ItemType::Trait,
-                   ItemType::Function, ItemType::Typedef, ItemType::Union, ItemType::Impl,
-                   ItemType::TyMethod, ItemType::Method, ItemType::StructField, ItemType::Variant,
-                   ItemType::AssociatedType, ItemType::AssociatedConst] {
+                   ItemType::Function, ItemType::Typedef, ItemType::Union, ItemType::OpaqueTy,
+                   ItemType::Impl, ItemType::TyMethod, ItemType::Method, ItemType::StructField,
+                   ItemType::Variant, ItemType::AssociatedType, ItemType::AssociatedConst] {
         if items.iter().any(|it| {
             if let clean::DefaultImplItem(..) = it.inner {
                 false
@@ -3319,6 +3320,7 @@ fn sidebar_module(fmt: &mut fmt::Formatter, _it: &clean::Item,
                 ItemType::Struct          => ("structs", "Structs"),
                 ItemType::Union           => ("unions", "Unions"),
                 ItemType::Enum            => ("enums", "Enums"),
+                ItemType::OpaqueTy        => ("opaque-types", "Opaque Types"),
                 ItemType::Function        => ("functions", "Functions"),
                 ItemType::Typedef         => ("types", "Type Definitions"),
                 ItemType::Static          => ("statics", "Statics"),
