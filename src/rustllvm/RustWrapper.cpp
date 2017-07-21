@@ -13,6 +13,7 @@
 #include "llvm/IR/DiagnosticInfo.h"
 #include "llvm/IR/DiagnosticPrinter.h"
 #include "llvm/IR/Instructions.h"
+#include "llvm/IR/LLVMContext.h"
 #include "llvm/Object/Archive.h"
 #include "llvm/Object/ObjectFile.h"
 
@@ -163,10 +164,14 @@ extern "C" void LLVMRustAddCallSiteAttribute(LLVMValueRef Instr, unsigned Index,
                                              LLVMRustAttribute RustAttr) {
   CallSite Call = CallSite(unwrap<Instruction>(Instr));
   Attribute Attr = Attribute::get(Call->getContext(), fromRust(RustAttr));
+#if LLVM_VERSION_GE(5, 0)
+  Call.addAttribute(Index, Attr);
+#else
   AttrBuilder B(Attr);
   Call.setAttributes(Call.getAttributes().addAttributes(
       Call->getContext(), Index,
       AttributeSet::get(Call->getContext(), Index, B)));
+#endif
 }
 
 extern "C" void LLVMRustAddDereferenceableCallSiteAttr(LLVMValueRef Instr,
@@ -175,9 +180,14 @@ extern "C" void LLVMRustAddDereferenceableCallSiteAttr(LLVMValueRef Instr,
   CallSite Call = CallSite(unwrap<Instruction>(Instr));
   AttrBuilder B;
   B.addDereferenceableAttr(Bytes);
+#if LLVM_VERSION_GE(5, 0)
+  Call.setAttributes(Call.getAttributes().addAttributes(
+      Call->getContext(), Index, B));
+#else
   Call.setAttributes(Call.getAttributes().addAttributes(
       Call->getContext(), Index,
       AttributeSet::get(Call->getContext(), Index, B)));
+#endif
 }
 
 extern "C" void LLVMRustAddFunctionAttribute(LLVMValueRef Fn, unsigned Index,
@@ -185,7 +195,11 @@ extern "C" void LLVMRustAddFunctionAttribute(LLVMValueRef Fn, unsigned Index,
   Function *A = unwrap<Function>(Fn);
   Attribute Attr = Attribute::get(A->getContext(), fromRust(RustAttr));
   AttrBuilder B(Attr);
+#if LLVM_VERSION_GE(5, 0)
+  A->addAttributes(Index, B);
+#else
   A->addAttributes(Index, AttributeSet::get(A->getContext(), Index, B));
+#endif
 }
 
 extern "C" void LLVMRustAddDereferenceableAttr(LLVMValueRef Fn, unsigned Index,
@@ -193,7 +207,11 @@ extern "C" void LLVMRustAddDereferenceableAttr(LLVMValueRef Fn, unsigned Index,
   Function *A = unwrap<Function>(Fn);
   AttrBuilder B;
   B.addDereferenceableAttr(Bytes);
+#if LLVM_VERSION_GE(5, 0)
+  A->addAttributes(Index, B);
+#else
   A->addAttributes(Index, AttributeSet::get(A->getContext(), Index, B));
+#endif
 }
 
 extern "C" void LLVMRustAddFunctionAttrStringValue(LLVMValueRef Fn,
@@ -203,18 +221,26 @@ extern "C" void LLVMRustAddFunctionAttrStringValue(LLVMValueRef Fn,
   Function *F = unwrap<Function>(Fn);
   AttrBuilder B;
   B.addAttribute(Name, Value);
+#if LLVM_VERSION_GE(5, 0)
+  F->addAttributes(Index, B);
+#else
   F->addAttributes(Index, AttributeSet::get(F->getContext(), Index, B));
+#endif
 }
 
 extern "C" void LLVMRustRemoveFunctionAttributes(LLVMValueRef Fn,
                                                  unsigned Index,
                                                  LLVMRustAttribute RustAttr) {
   Function *F = unwrap<Function>(Fn);
-  const AttributeSet PAL = F->getAttributes();
   Attribute Attr = Attribute::get(F->getContext(), fromRust(RustAttr));
   AttrBuilder B(Attr);
+  auto PAL = F->getAttributes();
+#if LLVM_VERSION_GE(5, 0)
+  auto PALNew = PAL.removeAttributes(F->getContext(), Index, B);
+#else
   const AttributeSet PALNew = PAL.removeAttributes(
       F->getContext(), Index, AttributeSet::get(F->getContext(), Index, B));
+#endif
   F->setAttributes(PALNew);
 }
 
@@ -263,12 +289,21 @@ enum class LLVMRustSynchronizationScope {
   CrossThread,
 };
 
+#if LLVM_VERSION_GE(5, 0)
+#define SynchronizationScope SyncScope::ID
+#define LLVMSingleThread SyncScope::SingleThread
+#define LLVMCrossThread SyncScope::System
+#else
+#define LLVMSingleThread SingleThread
+#define LLVMCrossThread CrossThread
+#endif
+
 static SynchronizationScope fromRust(LLVMRustSynchronizationScope Scope) {
   switch (Scope) {
   case LLVMRustSynchronizationScope::SingleThread:
-    return SingleThread;
+    return LLVMSingleThread;
   case LLVMRustSynchronizationScope::CrossThread:
-    return CrossThread;
+    return LLVMCrossThread;
   default:
     llvm_unreachable("bad SynchronizationScope.");
   }
@@ -320,6 +355,8 @@ typedef DIBuilder *LLVMRustDIBuilderRef;
 
 typedef struct LLVMOpaqueMetadata *LLVMRustMetadataRef;
 
+#if LLVM_VERSION_GE(5, 0)
+#else
 namespace llvm {
 DEFINE_ISA_CONVERSION_FUNCTIONS(Metadata, LLVMRustMetadataRef)
 
@@ -327,6 +364,7 @@ inline Metadata **unwrap(LLVMRustMetadataRef *Vals) {
   return reinterpret_cast<Metadata **>(Vals);
 }
 }
+#endif
 
 template <typename DIT> DIT *unwrapDIPtr(LLVMRustMetadataRef Ref) {
   return (DIT *)(Ref ? unwrap<MDNode>(Ref) : nullptr);
@@ -555,7 +593,11 @@ extern "C" LLVMRustMetadataRef LLVMRustDIBuilderCreatePointerType(
     LLVMRustDIBuilderRef Builder, LLVMRustMetadataRef PointeeTy,
     uint64_t SizeInBits, uint32_t AlignInBits, const char *Name) {
   return wrap(Builder->createPointerType(unwrapDI<DIType>(PointeeTy),
-                                         SizeInBits, AlignInBits, Name));
+                                         SizeInBits, AlignInBits,
+#if LLVM_VERSION_GE(5, 0)
+                                         None,
+#endif
+                                         Name));
 }
 
 extern "C" LLVMRustMetadataRef LLVMRustDIBuilderCreateStructType(
@@ -743,7 +785,11 @@ LLVMRustDIBuilderCreateNameSpace(LLVMRustDIBuilderRef Builder,
                                  LLVMRustMetadataRef Scope, const char *Name,
                                  LLVMRustMetadataRef File, unsigned LineNo) {
   return wrap(Builder->createNameSpace(
-      unwrapDI<DIDescriptor>(Scope), Name, unwrapDI<DIFile>(File), LineNo
+      unwrapDI<DIDescriptor>(Scope), Name
+#if LLVM_VERSION_LE(4, 9)
+      ,
+      unwrapDI<DIFile>(File), LineNo
+#endif
 #if LLVM_VERSION_GE(4, 0)
       ,
       false // ExportSymbols (only relevant for C++ anonymous namespaces)
@@ -888,7 +934,9 @@ extern "C" void LLVMRustUnpackOptimizationDiagnostic(
   RawRustStringOstream PassNameOS(PassNameOut);
   PassNameOS << Opt->getPassName();
   *FunctionOut = wrap(&Opt->getFunction());
+#if LLVM_VERSION_LE(4, 9)
   *DebugLocOut = wrap(&Opt->getDebugLoc());
+#endif
   RawRustStringOstream MessageOS(MessageOut);
   MessageOS << Opt->getMsg();
 }
