@@ -1676,7 +1676,6 @@ impl<'a> Visitor<'a> for AstValidator<'a> {
         }
 
         if ctxt == AssocCtxt::Trait || self.in_trait_impl {
-            self.invalid_visibility(&item.vis, None);
             if let AssocItemKind::Fn(box Fn { sig, .. }) = &item.kind {
                 self.check_trait_fn_not_const(sig.header.constness);
                 self.check_trait_fn_not_async(item.span, sig.header.asyncness);

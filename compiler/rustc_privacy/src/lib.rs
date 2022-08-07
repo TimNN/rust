@@ -1743,8 +1743,9 @@ impl SearchInterfaceForPrivateItemsVisitor<'_> {
                 }
             };
             let span = self.tcx.def_span(self.item_def_id.to_def_id());
+            // TODO: `has_pub_restricted` is always `true` for PIT.
             if self.has_old_errors
-                || self.in_assoc_ty
+                || self.in_assoc_ty && false
                 || self.tcx.resolutions(()).has_pub_restricted
             {
                 let vis_span = self.tcx.def_span(def_id);
@@ -1866,15 +1867,18 @@ impl<'tcx> PrivateItemsInPublicInterfacesChecker<'tcx> {
                 if let hir::ItemKind::Trait(.., trait_item_refs) = item.kind {
                     self.check(item.def_id, item_visibility).generics().predicates();
 
+                    let required_visibility = ty::Visibility::Restricted(
+                        tcx.parent_module_from_def_id(item.def_id).to_def_id(),
+                    );
                     for trait_item_ref in trait_item_refs {
                         self.check_assoc_item(
                             trait_item_ref.id.def_id,
                             trait_item_ref.kind,
-                            item_visibility,
+                            required_visibility,
                         );
 
                         if let AssocItemKind::Type = trait_item_ref.kind {
-                            self.check(trait_item_ref.id.def_id, item_visibility).bounds();
+                            self.check(trait_item_ref.id.def_id, required_visibility).bounds();
                         }
                     }
                 }
@@ -1937,7 +1941,15 @@ impl<'tcx> PrivateItemsInPublicInterfacesChecker<'tcx> {
                         let impl_item_vis = if impl_.of_trait.is_none() {
                             min(tcx.visibility(impl_item_ref.id.def_id), impl_vis, tcx)
                         } else {
-                            impl_vis
+                            min(
+                                tcx.visibility(
+                                    tcx.associated_item(impl_item_ref.id.def_id)
+                                        .trait_item_def_id
+                                        .unwrap(),
+                                ),
+                                impl_vis,
+                                tcx,
+                            )
                         };
                         self.check_assoc_item(
                             impl_item_ref.id.def_id,
