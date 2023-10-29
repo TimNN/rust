@@ -315,6 +315,7 @@ impl<'a, 'tcx, V: CodegenObject> OperandRef<'tcx, V> {
                 // Bools in union fields needs to be truncated.
                 *llval = bx.to_immediate(*llval, field);
             }
+            (OperandValue::Immediate(_), Abi::WasmExternref) => todo!("wasm_externref"),
             (OperandValue::Pair(a, b), Abi::ScalarPair(a_abi, b_abi)) => {
                 // Bools in union fields needs to be truncated.
                 *a = bx.to_immediate_scalar(*a, a_abi);

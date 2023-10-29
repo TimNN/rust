@@ -1197,6 +1197,10 @@ extern "C" LLVMTypeRef LLVMRustArrayType(LLVMTypeRef ElementTy,
   return wrap(ArrayType::get(unwrap(ElementTy), ElementCount));
 }
 
+extern "C" LLVMTypeRef LLVMRustWasmExternrefType(LLVMContextRef C) {
+  return wrap(llvm::Type::getWasm_ExternrefTy(*unwrap(C)));
+}
+
 DEFINE_SIMPLE_CONVERSION_FUNCTIONS(Twine, LLVMTwineRef)
 
 extern "C" void LLVMRustWriteTwineToString(LLVMTwineRef T, RustStringRef Str) {

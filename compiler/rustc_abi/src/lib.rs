@@ -1252,6 +1252,7 @@ pub enum Abi {
         /// If true, the size is exact, otherwise it's only a lower bound.
         sized: bool,
     },
+    WasmExternref,
 }
 
 impl Abi {
@@ -1259,7 +1260,11 @@ impl Abi {
     #[inline]
     pub fn is_unsized(&self) -> bool {
         match *self {
-            Abi::Uninhabited | Abi::Scalar(_) | Abi::ScalarPair(..) | Abi::Vector { .. } => false,
+            Abi::Uninhabited
+            | Abi::Scalar(_)
+            | Abi::ScalarPair(..)
+            | Abi::Vector { .. }
+            | Abi::WasmExternref => false,
             Abi::Aggregate { sized } => !sized,
         }
     }
@@ -1307,7 +1312,7 @@ impl Abi {
             Abi::Vector { element, count } => {
                 cx.data_layout().vector_align(element.size(cx) * count)
             }
-            Abi::Uninhabited | Abi::Aggregate { .. } => return None,
+            Abi::Uninhabited | Abi::Aggregate { .. } | Abi::WasmExternref => return None,
         })
     }
 
@@ -1328,7 +1333,7 @@ impl Abi {
                 // to make the size a multiple of align (e.g. for vectors of size 3).
                 (element.size(cx) * count).align_to(self.inherent_align(cx)?.abi)
             }
-            Abi::Uninhabited | Abi::Aggregate { .. } => return None,
+            Abi::Uninhabited | Abi::Aggregate { .. } | Abi::WasmExternref => return None,
         })
     }
 
@@ -1339,6 +1344,7 @@ impl Abi {
             Abi::ScalarPair(s1, s2) => Abi::ScalarPair(s1.to_union(), s2.to_union()),
             Abi::Vector { element, count } => Abi::Vector { element: element.to_union(), count },
             Abi::Uninhabited | Abi::Aggregate { .. } => Abi::Aggregate { sized: true },
+            Abi::WasmExternref => Abi::WasmExternref,
         }
     }
 
@@ -1630,6 +1636,7 @@ impl<FieldIdx: Idx, VariantIdx: Idx> LayoutS<FieldIdx, VariantIdx> {
             Abi::Scalar(_) | Abi::ScalarPair(..) | Abi::Vector { .. } => false,
             Abi::Uninhabited => self.size.bytes() == 0,
             Abi::Aggregate { sized } => sized && self.size.bytes() == 0,
+            Abi::WasmExternref => false,
         }
     }
 

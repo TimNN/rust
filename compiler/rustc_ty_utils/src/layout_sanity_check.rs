@@ -239,6 +239,7 @@ pub(super) fn sanity_check_layout<'tcx>(
                 // FIXME: Do some kind of check of the inner type, like for Scalar and ScalarPair.
             }
             Abi::Uninhabited | Abi::Aggregate { .. } => {} // Nothing to check.
+            Abi::WasmExternref => {} // TODO(wasm_externref): compare expected.
         }
     }
 

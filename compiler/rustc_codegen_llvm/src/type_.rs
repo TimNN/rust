@@ -191,6 +191,10 @@ impl<'ll, 'tcx> BaseTypeMethods<'tcx> for CodegenCx<'ll, 'tcx> {
         unsafe { llvm::LLVMPointerTypeInContext(self.llcx, address_space.0) }
     }
 
+    fn type_wasm_externref(&self) -> &'ll Type {
+        unsafe { llvm::LLVMRustWasmExternrefType(self.llcx) }
+    }
+
     fn element_type(&self, ty: &'ll Type) -> &'ll Type {
         match self.type_kind(ty) {
             TypeKind::Array | TypeKind::Vector => unsafe { llvm::LLVMGetElementType(ty) },

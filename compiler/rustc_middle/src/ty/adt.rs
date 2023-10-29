@@ -49,6 +49,8 @@ bitflags! {
         const IS_VARIANT_LIST_NON_EXHAUSTIVE = 1 << 8;
         /// Indicates whether the type is `UnsafeCell`.
         const IS_UNSAFE_CELL              = 1 << 9;
+        /// Indicates whether the type is `WasmExternref`.
+        const IS_WASM_EXTERNREF   = 1 << 10;
     }
 }
 
@@ -265,6 +267,9 @@ impl AdtDefData {
         if Some(did) == tcx.lang_items().unsafe_cell_type() {
             flags |= AdtFlags::IS_UNSAFE_CELL;
         }
+        if Some(did) == tcx.lang_items().wasm_externref() {
+            flags |= AdtFlags::IS_WASM_EXTERNREF;
+        }
 
         AdtDefData { did, variants, flags, repr }
     }
@@ -355,6 +360,12 @@ impl<'tcx> AdtDef<'tcx> {
     #[inline]
     pub fn is_unsafe_cell(self) -> bool {
         self.flags().contains(AdtFlags::IS_UNSAFE_CELL)
+    }
+
+    /// Returns `true` if this is `WasmExternref`.
+    #[inline]
+    pub fn is_wasm_externref(self) -> bool {
+        self.flags().contains(AdtFlags::IS_WASM_EXTERNREF)
     }
 
     /// Returns `true` if this is `ManuallyDrop<T>`.

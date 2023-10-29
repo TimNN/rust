@@ -74,6 +74,7 @@ where
 
                 return Ok(());
             }
+            Abi::WasmExternref => unreachable!("non-wasm arch"),
         };
 
         // Fill in `cls` for scalars (Int/Sse) and vectors (Sse).

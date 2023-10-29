@@ -641,3 +641,15 @@ extern "rust-intrinsic" {
     #[rustc_nounwind]
     fn va_arg<T: sealed_trait::VaArgSafe>(ap: &mut VaListImpl<'_>) -> T;
 }
+
+#[cfg(any(target_family = "wasm", doc))]
+#[doc(cfg(target_family = "wasm"))]
+#[unstable(feature = "wasm_ffi", issue = "none")]
+#[allow(missing_docs)]
+pub mod wasm {
+    #[cfg_attr(not(bootstrap), lang = "wasm_externref")]
+    #[non_exhaustive]
+    #[unstable(feature = "wasm_externref", issue = "none")]
+    #[allow(missing_debug_implementations)] // `Debug::fmt` couldn't be called.
+    pub struct ExternRef;
+}

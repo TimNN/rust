@@ -1755,6 +1755,7 @@ symbols! {
         vtable_size,
         warn,
         wasm_abi,
+        wasm_externref,
         wasm_import_module,
         wasm_target_feature,
         while_let,

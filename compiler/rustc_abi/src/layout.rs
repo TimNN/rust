@@ -153,12 +153,26 @@ pub trait LayoutCalculator {
         variants: &IndexSlice<VariantIdx, IndexVec<FieldIdx, F>>,
         is_enum: bool,
         is_unsafe_cell: bool,
+        is_wasm_externref: bool,
         scalar_valid_range: (Bound<u128>, Bound<u128>),
         discr_range_of_repr: impl Fn(i128, i128) -> (Integer, bool),
         discriminants: impl Iterator<Item = (VariantIdx, i128)>,
         dont_niche_optimize_enum: bool,
         always_sized: bool,
     ) -> Option<LayoutS<FieldIdx, VariantIdx>> {
+        if is_wasm_externref {
+            return Some(LayoutS {
+                fields: FieldsShape::Primitive,
+                variants: Variants::Single { index: VariantIdx::new(0) },
+                abi: Abi::WasmExternref,
+                largest_niche: None,
+                align: AbiAndPrefAlign::new(Align::ONE),
+                size: Size::from_bytes(1),
+                max_repr_align: None,
+                unadjusted_abi_align: Align::ONE,
+            });
+        }
+
         let dl = self.current_data_layout();
         let dl = dl.borrow();
 
@@ -233,6 +247,7 @@ pub trait LayoutCalculator {
                     }
                     Abi::Vector { element, count: _ } => hide_niches(element),
                     Abi::Aggregate { sized: _ } => {}
+                    Abi::WasmExternref => {}
                 }
                 st.largest_niche = None;
                 return Some(st);

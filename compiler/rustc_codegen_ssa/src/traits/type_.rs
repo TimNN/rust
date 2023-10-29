@@ -28,6 +28,7 @@ pub trait BaseTypeMethods<'tcx>: Backend<'tcx> {
     fn type_kind(&self, ty: Self::Type) -> TypeKind;
     fn type_ptr(&self) -> Self::Type;
     fn type_ptr_ext(&self, address_space: AddressSpace) -> Self::Type;
+    fn type_wasm_externref(&self) -> Self::Type;
     fn element_type(&self, ty: Self::Type) -> Self::Type;
 
     /// Returns the number of elements in `self` if it is an LLVM vector type.

@@ -873,7 +873,7 @@ impl<'rt, 'mir, 'tcx: 'mir, M: Machine<'mir, 'tcx>> ValueVisitor<'mir, 'tcx, M>
                 // (This is harder to check since Miri does not represent these as `Immediate`. We
                 // also cannot use field projections since this might be a newtype around a vector.)
             }
-            Abi::Aggregate { .. } => {
+            Abi::Aggregate { .. } | Abi::WasmExternref => {
                 // Nothing to do.
             }
         }
