@@ -115,5 +115,8 @@ bitflags! {
 
         /// Does this have `Coroutine` or `CoroutineWitness`?
         const HAS_TY_COROUTINE            = 1 << 23;
+
+        /// Does this have special storage requirements?
+        const HAS_SPECIAL_STORAGE         = 1 << 24;
     }
 }

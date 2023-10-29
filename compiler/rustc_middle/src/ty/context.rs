@@ -193,13 +193,23 @@ impl<'tcx> CtxtInterners<'tcx> {
     }
 
     /// Interns a type. (Use `mk_*` functions instead, where possible.)
+    ///
+    /// `flags_from_ty_def` are flags that have been determined from the type
+    /// definition. Computing these may need access to the [TyCtxt], so they
+    /// are computed outside of the interner.
     #[allow(rustc::usage_of_ty_tykind)]
     #[inline(never)]
-    fn intern_ty(&self, kind: TyKind<'tcx>, sess: &Session, untracked: &Untracked) -> Ty<'tcx> {
+    fn intern_ty(
+        &self,
+        kind: TyKind<'tcx>,
+        sess: &Session,
+        untracked: &Untracked,
+        flags_from_ty_def: TypeFlags,
+    ) -> Ty<'tcx> {
         Ty(Interned::new_unchecked(
             self.type_
                 .intern(kind, |kind| {
-                    let flags = super::flags::FlagComputation::for_kind(&kind);
+                    let flags = super::flags::FlagComputation::for_kind(&kind) | flags_from_ty_def;
                     let stable_hash = self.stable_hash(&flags, sess, untracked, &kind);
 
                     InternedInSet(self.arena.alloc(WithCachedTypeInfo {
@@ -342,7 +352,11 @@ impl<'tcx> CommonTypes<'tcx> {
         sess: &Session,
         untracked: &Untracked,
     ) -> CommonTypes<'tcx> {
-        let mk = |ty| interners.intern_ty(ty, sess, untracked);
+        // None of the common types have flags that need to be computed from
+        // their definition.
+        let flags_from_ty_def = TypeFlags::empty();
+
+        let mk = |ty| interners.intern_ty(ty, sess, untracked, flags_from_ty_def);
 
         let ty_vars =
             (0..NUM_PREINTERNED_TY_VARS).map(|n| mk(Infer(ty::TyVar(TyVid::from(n))))).collect();
@@ -1718,11 +1732,22 @@ impl<'tcx> TyCtxt<'tcx> {
     #[allow(rustc::usage_of_ty_tykind)]
     #[inline]
     pub fn mk_ty_from_kind(self, st: TyKind<'tcx>) -> Ty<'tcx> {
+        let mut flags_from_ty_def = TypeFlags::empty();
+
+        if let TyKind::Foreign(def_id) = st {
+            if Some(def_id) == self.lang_items().wasm_extern_ty()
+                || Some(def_id) == self.lang_items().wasm_table_ty()
+            {
+                flags_from_ty_def |= TypeFlags::HAS_SPECIAL_STORAGE;
+            }
+        }
+
         self.interners.intern_ty(
             st,
             self.sess,
             // This is only used to create a stable hashing context.
             &self.untracked,
+            flags_from_ty_def,
         )
     }
 
