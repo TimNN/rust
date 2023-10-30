@@ -890,6 +890,7 @@ extern "C" {
     pub fn LLVMVoidTypeInContext(C: &Context) -> &Type;
     pub fn LLVMTokenTypeInContext(C: &Context) -> &Type;
     pub fn LLVMMetadataTypeInContext(C: &Context) -> &Type;
+    pub fn LLVMRustWasmExternrefType(C: &Context) -> &Type;
 
     // Operations on all values
     pub fn LLVMTypeOf(Val: &Value) -> &Type;

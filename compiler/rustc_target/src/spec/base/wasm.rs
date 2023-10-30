@@ -2,6 +2,7 @@ use crate::spec::{
     add_link_args, cvs, Cc, LinkSelfContainedDefault, LinkerFlavor, PanicStrategy, RelocModel,
     TargetOptions, TlsModel,
 };
+use std::borrow::Cow;
 
 pub fn options() -> TargetOptions {
     macro_rules! args {
@@ -129,6 +130,11 @@ pub fn options() -> TargetOptions {
         // that this isn't useful for wasm and has tricky issues with
         // representation, so this is disabled.
         generate_arange_section: false,
+
+        // Reference-types will only be generated when the
+        // `core::ffi::ExternRef` type is explicitly used.
+        // TODO(wasm_externref)
+        features: Cow::Borrowed("+reference-types"),
 
         ..Default::default()
     }

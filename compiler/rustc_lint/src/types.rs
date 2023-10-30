@@ -1064,6 +1064,9 @@ impl<'a, 'tcx> ImproperCTypesVisitor<'a, 'tcx> {
                 if def.is_phantom_data() {
                     return FfiPhantom(ty);
                 }
+                if def.is_wasm_externref() {
+                    return FfiSafe;
+                }
                 match def.adt_kind() {
                     AdtKind::Struct | AdtKind::Union => {
                         if !def.repr().c() && !def.repr().transparent() {

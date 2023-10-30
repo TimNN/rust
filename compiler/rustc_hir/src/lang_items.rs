@@ -328,6 +328,12 @@ language_item_table! {
 
     String,                  sym::String,              string,                     Target::Struct,         GenericRequirement::None;
     CStr,                    sym::CStr,                c_str,                      Target::Struct,         GenericRequirement::None;
+
+    WasmExternTy,            sym::wasm_extern_ty,      wasm_extern_ty,             Target::ForeignTy,     GenericRequirement::None;
+    WasmTableTy,             sym::wasm_table_ty,       wasm_table_ty,              Target::Struct,        GenericRequirement::Exact(1);
+    WasmGlobalTy,            sym::wasm_global_ty,      wasm_global_ty,             Target::Struct,        GenericRequirement::Exact(1);
+    WasmHeapTy,              sym::wasm_heap_ty,        wasm_heap_ty,               Target::Trait,         GenericRequirement::None;
+    WasmHeapRef,             sym::wasm_heap_ref,       wasm_heap_ref,              Target::Trait,         GenericRequirement::None;
 }
 
 pub enum GenericRequirement {

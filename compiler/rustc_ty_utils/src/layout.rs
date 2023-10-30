@@ -155,6 +155,8 @@ fn layout_of_uncached<'tcx>(
 
         // Potentially-wide pointers.
         ty::Ref(_, pointee, _) | ty::RawPtr(ty::TypeAndMut { ty: pointee, .. }) => {
+            let pointee_layout = cx.layout_of(pointee)?;
+
             let mut data_ptr = scalar_unit(Pointer(AddressSpace::DATA));
             if !ty.is_unsafe_ptr() {
                 data_ptr.valid_range_mut().start = 1;
@@ -509,6 +511,7 @@ fn layout_of_uncached<'tcx>(
                 &variants,
                 def.is_enum(),
                 def.is_unsafe_cell(),
+                def.is_wasm_externref(),
                 tcx.layout_scalar_valid_range(def.did()),
                 get_discriminant_type,
                 discriminants_iter(),
@@ -532,6 +535,7 @@ fn layout_of_uncached<'tcx>(
                     &variants,
                     def.is_enum(),
                     def.is_unsafe_cell(),
+                    def.is_wasm_externref(),
                     tcx.layout_scalar_valid_range(def.did()),
                     get_discriminant_type,
                     discriminants_iter(),

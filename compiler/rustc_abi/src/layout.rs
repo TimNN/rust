@@ -233,6 +233,7 @@ pub trait LayoutCalculator {
                     }
                     Abi::Vector { element, count: _ } => hide_niches(element),
                     Abi::Aggregate { sized: _ } => {}
+                    Abi::WasmExternref => {}
                 }
                 st.largest_niche = None;
                 return Some(st);
@@ -1125,6 +1126,7 @@ fn univariant<
                     match field.abi {
                         // For plain scalars, or vectors of them, we can't unpack
                         // newtypes for `#[repr(C)]`, as that affects C ABIs.
+                        // TODO
                         Abi::Scalar(_) | Abi::Vector { .. } if optimize => {
                             abi = field.abi;
                         }

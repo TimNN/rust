@@ -1251,6 +1251,33 @@ pub enum Abi {
         /// If true, the size is exact, otherwise it's only a lower bound.
         sized: bool,
     },
+
+    /// A type that only exists on the Wasm heap.
+    ///
+    /// The type is considered unsized and cannot be used directly, only via a
+    /// pointer/reference with the [Abi::WasmRef] ABI.
+    WasmHeapTy,
+
+    /// Only used for the `wasm_table_ty` lang item.
+    ///
+    /// This must be sized because it needs to be used as the type of `static`
+    /// variables (so we cannot reuse [Abi::WasmHeapTy]).
+    ///
+    /// Pointers/references to this type use the [Abi::WasmRef] ABI.
+    WasmTableTy,
+
+    /// A pointer or reference to a Wasm type.
+    ///
+    /// [Abi::WasmRef] types are not represented as a [Primitive::Pointer]
+    /// [Scalar] because they have several special properties:
+    ///
+    /// * They are treated as sized because they can be stored on the stack and
+    ///   used as function parameters, but their actual size (and alignment) is
+    ///   unknown / opaque.
+    /// * It is not possible to create pointers/references to them, and they
+    ///   cannot be part of aggregates.
+    /// * They require special handling during codegen.
+    WasmRef,
 }
 
 impl Abi {
@@ -1258,7 +1285,13 @@ impl Abi {
     #[inline]
     pub fn is_unsized(&self) -> bool {
         match *self {
-            Abi::Uninhabited | Abi::Scalar(_) | Abi::ScalarPair(..) | Abi::Vector { .. } => false,
+            Abi::Uninhabited
+            | Abi::Scalar(_)
+            | Abi::ScalarPair(..)
+            | Abi::Vector { .. }
+            | Abi::WasmTable
+            | Abi::WasmRef => false,
+            Abi::WasmHeapTy => true,
             Abi::Aggregate { sized } => !sized,
         }
     }
@@ -1306,7 +1339,7 @@ impl Abi {
             Abi::Vector { element, count } => {
                 cx.data_layout().vector_align(element.size(cx) * count)
             }
-            Abi::Uninhabited | Abi::Aggregate { .. } => return None,
+            Abi::Uninhabited | Abi::Aggregate { .. } | Abi::WasmExternref => return None,
         })
     }
 
@@ -1327,7 +1360,7 @@ impl Abi {
                 // to make the size a multiple of align (e.g. for vectors of size 3).
                 (element.size(cx) * count).align_to(self.inherent_align(cx)?.abi)
             }
-            Abi::Uninhabited | Abi::Aggregate { .. } => return None,
+            Abi::Uninhabited | Abi::Aggregate { .. } | Abi::WasmExternref => return None,
         })
     }
 
@@ -1338,6 +1371,7 @@ impl Abi {
             Abi::ScalarPair(s1, s2) => Abi::ScalarPair(s1.to_union(), s2.to_union()),
             Abi::Vector { element, count } => Abi::Vector { element: element.to_union(), count },
             Abi::Uninhabited | Abi::Aggregate { .. } => Abi::Aggregate { sized: true },
+            Abi::WasmExternref => Abi::WasmExternref,
         }
     }
 
@@ -1550,6 +1584,26 @@ impl<FieldIdx: Idx, VariantIdx: Idx> LayoutS<FieldIdx, VariantIdx> {
             unadjusted_abi_align: align.abi,
         }
     }
+
+    // pub fn wasm_heap_ty() -> Self {
+    //     // return Some(LayoutS {
+    //     //     fields: FieldsShape::Primitive,
+    //     //     variants: Variants::Single { index: VariantIdx::new(0) },
+    //     //     abi: Abi::WasmExternref,
+    //     //     largest_niche: None,
+    //     //     align: AbiAndPrefAlign::new(Align::ONE),
+    //     //     size: Size::from_bytes(1),
+    //     //     max_repr_align: None,
+    //     //     unadjusted_abi_align: Align::ONE,
+    //     // });
+    //     LayoutS {
+    //         variants: Variants::Single { index: VariantIdx::new(0) },
+    //         fields: FieldsShape::Arbitrary {
+    //             offsets: IndexVec::new(),
+    //             memory_index: IndexVec::new(),
+    //         },
+    //     }
+    // }
 }
 
 impl<FieldIdx: Idx, VariantIdx: Idx> fmt::Debug for LayoutS<FieldIdx, VariantIdx>
@@ -1629,6 +1683,7 @@ impl<FieldIdx: Idx, VariantIdx: Idx> LayoutS<FieldIdx, VariantIdx> {
             Abi::Scalar(_) | Abi::ScalarPair(..) | Abi::Vector { .. } => false,
             Abi::Uninhabited => self.size.bytes() == 0,
             Abi::Aggregate { sized } => sized && self.size.bytes() == 0,
+            Abi::WasmHeapTy | Abi::WasmTableTy | Abi::WasmRef => false,
         }
     }
 

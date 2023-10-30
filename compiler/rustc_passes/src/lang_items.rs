@@ -49,6 +49,8 @@ impl<'tcx> LanguageItemCollector<'tcx> {
                 Some(lang_item) if actual_target == lang_item.target() => {
                     self.collect_item_extended(lang_item, def_id, span);
                 }
+                // Reference to a weak lang item, handled elsewhere.
+                Some(lang_item) if lang_item.is_weak() && actual_target == Target::ForeignFn => {}
                 // Known lang item with attribute on incorrect target.
                 Some(lang_item) => {
                     self.tcx.sess.emit_err(LangItemOnIncorrectTarget {
@@ -230,6 +232,12 @@ fn get_lang_items(tcx: TyCtxt<'_>, (): ()) -> LanguageItems {
                 }
             }
         }
+    }
+
+    // FIXME: avoid calling foreign_item() when possible
+    for id in crate_items.foreign_items() {
+        let item = tcx.hir().foreign_item(id);
+        collector.check_for_lang(Target::from_foreign_item(item), id.owner_id.def_id);
     }
 
     // FIXME: avoid calling trait_item() when possible
