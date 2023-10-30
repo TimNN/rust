@@ -36,7 +36,7 @@ fn uncached_llvm_type<'a, 'tcx>(
             );
         }
         Abi::Uninhabited | Abi::Aggregate { .. } => {}
-        Abi::WasmExternref => return cx.type_wasm_externref(),
+        Abi::WasmHeapRef => return cx.type_wasm_externref(), // TODO: Check Actual Type.
     }
 
     let name = match layout.ty.kind() {
@@ -193,7 +193,7 @@ impl<'tcx> LayoutLlvmExt<'tcx> for TyAndLayout<'tcx> {
     fn is_llvm_immediate(&self) -> bool {
         match self.abi {
             Abi::Scalar(_) | Abi::Vector { .. } => true,
-            Abi::ScalarPair(..) | Abi::Uninhabited | Abi::Aggregate { .. } | Abi::WasmExternref => {
+            Abi::ScalarPair(..) | Abi::Uninhabited | Abi::Aggregate { .. } | Abi::WasmHeapRef => {
                 false
             }
         }
@@ -206,7 +206,7 @@ impl<'tcx> LayoutLlvmExt<'tcx> for TyAndLayout<'tcx> {
             | Abi::Scalar(_)
             | Abi::Vector { .. }
             | Abi::Aggregate { .. }
-            | Abi::WasmExternref => false,
+            | Abi::WasmHeapRef => false,
         }
     }
 

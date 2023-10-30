@@ -1064,7 +1064,7 @@ impl<'a, 'tcx> ImproperCTypesVisitor<'a, 'tcx> {
                 if def.is_phantom_data() {
                     return FfiPhantom(ty);
                 }
-                if def.is_wasm_externref() {
+                if ty.is_wasm_heap_ref(tcx, self.cx.param_env) {
                     return FfiSafe;
                 }
                 match def.adt_kind() {

@@ -215,6 +215,7 @@ pub enum LayoutError<'tcx> {
     SizeOverflow(Ty<'tcx>),
     NormalizationFailure(Ty<'tcx>, NormalizationError<'tcx>),
     ReferencesError(ErrorGuaranteed),
+    InvalidWasmType(Ty<'tcx>),
     Cycle(ErrorGuaranteed),
 }
 
@@ -228,6 +229,7 @@ impl<'tcx> LayoutError<'tcx> {
             NormalizationFailure(_, _) => middle_cannot_be_normalized,
             Cycle(_) => middle_cycle,
             ReferencesError(_) => middle_layout_references_error,
+            InvalidWasmType(_) => middle_invalid_wasm_type,
         }
     }
 
@@ -242,6 +244,7 @@ impl<'tcx> LayoutError<'tcx> {
             }
             Cycle(_) => E::Cycle,
             ReferencesError(_) => E::ReferencesError,
+            InvalidWasmType(ty) => E::InvalidWasmType { ty },
         }
     }
 }
@@ -263,6 +266,9 @@ impl<'tcx> fmt::Display for LayoutError<'tcx> {
             ),
             LayoutError::Cycle(_) => write!(f, "a cycle occurred during layout computation"),
             LayoutError::ReferencesError(_) => write!(f, "the type has an unknown layout"),
+            LayoutError::InvalidWasmType(ty) => {
+                write!(f, "the type `{ty}` is not valid in WebAssembly")
+            }
         }
     }
 }
@@ -336,7 +342,8 @@ impl<'tcx> SizeSkeleton<'tcx> {
                 e @ LayoutError::Cycle(_)
                 | e @ LayoutError::SizeOverflow(_)
                 | e @ LayoutError::NormalizationFailure(..)
-                | e @ LayoutError::ReferencesError(_),
+                | e @ LayoutError::ReferencesError(_)
+                | e @ LayoutError::InvalidWasmType(_),
             ) => return Err(e),
         };
 

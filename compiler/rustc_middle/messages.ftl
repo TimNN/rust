@@ -85,3 +85,6 @@ middle_unknown_layout =
 
 middle_values_too_big =
     values of the type `{$ty}` are too big for the current architecture
+
+middle_invalid_wasm_type =
+    the type `{$ty}` is not valid in WebAssembly

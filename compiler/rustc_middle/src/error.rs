@@ -135,6 +135,9 @@ pub enum LayoutError<'tcx> {
 
     #[diag(middle_layout_references_error)]
     ReferencesError,
+
+    #[diag(middle_invalid_wasm_type)]
+    InvalidWasmType { ty: Ty<'tcx> },
 }
 
 #[derive(Diagnostic)]

@@ -108,7 +108,7 @@ where
                         }
                         false
                     }
-                    Abi::WasmExternref => unreachable!("non-wasm arch")
+                    Abi::WasmHeapRef => unreachable!("non-wasm arch")
                 }
             }
 

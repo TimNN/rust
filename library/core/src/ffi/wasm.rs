@@ -140,8 +140,6 @@ macro_rules! global {
     }
 }
 
-global!(GlobalTest: ExternRef);
-
 #[macro_export]
 #[allow_internal_unstable(wasm_heap_types_internals)]
 macro_rules! table {
@@ -163,5 +161,3 @@ macro_rules! table {
         }
     }
 }
-
-table!(TableTest: ExternRef);

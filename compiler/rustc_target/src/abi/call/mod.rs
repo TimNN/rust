@@ -384,7 +384,7 @@ impl HomogeneousAggregate {
 impl<'a, Ty> TyAndLayout<'a, Ty> {
     fn is_aggregate(&self) -> bool {
         match self.abi {
-            Abi::Uninhabited | Abi::Scalar(_) | Abi::Vector { .. } | Abi::WasmExternref => false,
+            Abi::Uninhabited | Abi::Scalar(_) | Abi::Vector { .. } | Abi::WasmHeapRef => false,
             Abi::ScalarPair(..) | Abi::Aggregate { .. } => true,
         }
     }
@@ -403,7 +403,7 @@ impl<'a, Ty> TyAndLayout<'a, Ty> {
         Ty: TyAbiInterface<'a, C> + Copy,
     {
         match self.abi {
-            Abi::Uninhabited | Abi::WasmExternref => Err(Heterogeneous),
+            Abi::Uninhabited | Abi::WasmHeapRef => Err(Heterogeneous),
 
             // The primitive for this algorithm.
             Abi::Scalar(scalar) => {
@@ -557,7 +557,7 @@ impl<'a, Ty> ArgAbi<'a, Ty> {
             Abi::Vector { .. } => PassMode::Direct(ArgAttributes::new()),
             // The `Aggregate` ABI should always be adjusted later.
             Abi::Aggregate { .. } => PassMode::Direct(ArgAttributes::new()),
-            Abi::WasmExternref => PassMode::Direct(ArgAttributes::new()),
+            Abi::WasmHeapRef => PassMode::Direct(ArgAttributes::new()), // TODO: NonNull.
         };
         ArgAbi { layout, mode }
     }

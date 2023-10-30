@@ -233,7 +233,7 @@ pub trait LayoutCalculator {
                     }
                     Abi::Vector { element, count: _ } => hide_niches(element),
                     Abi::Aggregate { sized: _ } => {}
-                    Abi::WasmExternref => {}
+                    Abi::WasmHeapRef => {}
                 }
                 st.largest_niche = None;
                 return Some(st);
@@ -1126,13 +1126,17 @@ fn univariant<
                     match field.abi {
                         // For plain scalars, or vectors of them, we can't unpack
                         // newtypes for `#[repr(C)]`, as that affects C ABIs.
-                        // TODO
                         Abi::Scalar(_) | Abi::Vector { .. } if optimize => {
                             abi = field.abi;
                         }
                         // But scalar pairs are Rust-specific and get
                         // treated as aggregates by C ABIs anyway.
                         Abi::ScalarPair(..) => {
+                            abi = field.abi;
+                        }
+                        // References to the Wasm heap must always be passed as
+                        // themselves.
+                        Abi::WasmHeapRef => {
                             abi = field.abi;
                         }
                         _ => {}

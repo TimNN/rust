@@ -6,43 +6,45 @@
 
 use core::ffi::wasm::ExternRef;
 
-#[used]
-pub static FOO: [ExternRef; 0] = [];
+// #[used]
+// pub static FOO: [ExternRef; 0] = [];
 
-extern "C" {
-    fn by_ref(x: &ExternRef);
-}
+// extern "C" {
+//     fn by_ref(x: &ExternRef);
+// }
 
 // CHECK-LABEL: @passthrough
 // CHECK-NEXT: foobar
 #[no_mangle]
 pub extern "C" fn passthrough(x: ExternRef) -> ExternRef {
-    // unsafe { by_ref(&x) };
-
+    // consume(&x);
     x
 }
 
-#[no_mangle]
-pub extern "C" fn fnptr(x: fn(u32) -> u32) -> fn(u32) -> u32 {
-    x
-}
+// #[no_mangle]
+// pub extern "C" fn consume(x: &ExternRef) {}
 
-#[no_mangle]
-pub extern "C" fn call(v: u32, x: fn(u32) -> u32) -> u32 {
-    x(v)
-}
+// #[no_mangle]
+// pub extern "C" fn fnptr(x: fn(u32) -> u32) -> fn(u32) -> u32 {
+//     x
+// }
 
-pub static FOOS: u32 = 43;
+// #[no_mangle]
+// pub extern "C" fn call(v: u32, x: fn(u32) -> u32) -> u32 {
+//     x(v)
+// }
 
-#[no_mangle]
-pub extern "C" fn staticcc() {
-    // let x = 42;
-    // let y = &x;
-    let z = &FOOS;
+// pub static FOOS: u32 = 43;
 
-    unsafe { consume(z) };
-}
+// #[no_mangle]
+// pub extern "C" fn staticcc() {
+//     // let x = 42;
+//     // let y = &x;
+//     let z = &FOOS;
 
-extern "C" {
-    fn consume(_: &u32);
-}
+//     unsafe { consume(z) };
+// }
+
+// extern "C" {
+//     fn consume(_: &u32);
+// }

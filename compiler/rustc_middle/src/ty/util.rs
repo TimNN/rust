@@ -1084,6 +1084,16 @@ impl<'tcx> Ty<'tcx> {
         }
     }
 
+    // FIXME: Consider whether a "trivial" check like above is needed.
+    pub fn is_wasm_heap_ty(self, tcx: TyCtxt<'tcx>, param_env: ty::ParamEnv<'tcx>) -> bool {
+        tcx.sess.target.is_like_wasm && tcx.is_wasm_heap_ty_raw(param_env.and(self))
+    }
+
+    // FIXME: Consider whether a "trivial" check like above is needed.
+    pub fn is_wasm_heap_ref(self, tcx: TyCtxt<'tcx>, param_env: ty::ParamEnv<'tcx>) -> bool {
+        tcx.sess.target.is_like_wasm && tcx.is_wasm_heap_ref_raw(param_env.and(self))
+    }
+
     /// If `ty.needs_drop(...)` returns `true`, then `ty` is definitely
     /// non-copy and *might* have a destructor attached; if it returns
     /// `false`, then `ty` definitely has no destructor (i.e., no drop glue).
