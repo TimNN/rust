@@ -285,6 +285,7 @@ trivial! {
     rustc_middle::ty::ReprOptions,
     rustc_middle::ty::UnusedGenericParams,
     rustc_middle::ty::util::AlwaysRequiresDrop,
+    rustc_middle::ty::util::WasmHeapTypeRepr,
     rustc_middle::ty::Visibility<rustc_span::def_id::DefId>,
     rustc_session::config::CrateType,
     rustc_session::config::EntryFnType,

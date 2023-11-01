@@ -1,10 +1,26 @@
 // only-wasm32
-// compile-flags: --edition=2021
+// compile-flags: -Dimproper_ctypes_definitions --edition=2021
 
 #![crate_type = "cdylib"]
-#![feature(wasm_heap_types)]
+#![feature(wasm_heap_types_v0, wasm_heap_types_v1)]
 
-use core::ffi::wasm::ExternRef;
+use core::ffi::wasm::{Extern, ExternRef};
+
+// CHECK-LABEL: @externref
+// CHECK-SAME: ptr addrspace(10) nocapture %0
+#[no_mangle]
+pub extern "C" fn externref(_: ExternRef) {}
+
+// CHECK-LABEL: @raw_extern
+// CHECK-SAME: ptr addrspace(10) nocapture %0
+// CHECK-SAME: ptr addrspace(10) nocapture %1
+#[no_mangle]
+pub extern "C" fn raw_extern(_: *const Extern, _: *mut Extern) {}
+
+// CHECK-LABEL: @option_extern
+// CHECK-SAME: ptr addrspace(10) nocapture %0
+#[no_mangle]
+pub extern "C" fn option_extern(_: Option<&Extern>) {}
 
 // #[used]
 // pub static FOO: [ExternRef; 0] = [];
@@ -12,14 +28,6 @@ use core::ffi::wasm::ExternRef;
 // extern "C" {
 //     fn by_ref(x: &ExternRef);
 // }
-
-// CHECK-LABEL: @passthrough
-// CHECK-NEXT: foobar
-#[no_mangle]
-pub extern "C" fn passthrough(x: ExternRef) -> ExternRef {
-    // consume(&x);
-    x
-}
 
 // #[no_mangle]
 // pub extern "C" fn consume(x: &ExternRef) {}

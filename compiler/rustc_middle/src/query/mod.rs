@@ -1344,10 +1344,6 @@ rustc_queries! {
     query is_unpin_raw(env: ty::ParamEnvAnd<'tcx, Ty<'tcx>>) -> bool {
         desc { "computing whether `{}` is `Unpin`", env.value }
     }
-    /// Query backing `Ty::is_wasm_heap_ty`.
-    query is_wasm_heap_ty_raw(env: ty::ParamEnvAnd<'tcx, Ty<'tcx>>) -> bool {
-        desc { "computing whether `{}` is a Wasm heap type", env.value }
-    }
     /// Query backing `Ty::is_wasm_heap_ref`.
     query is_wasm_heap_ref_raw(env: ty::ParamEnvAnd<'tcx, Ty<'tcx>>) -> bool {
         desc { "computing whether `{}` is a Wasm heap ref", env.value }
@@ -2199,6 +2195,11 @@ rustc_queries! {
     query cross_crate_inlinable(def_id: DefId) -> bool {
         desc { "whether the item should be made inlinable across crates" }
         separate_provide_extern
+    }
+
+    /// Query computing the (Wasm) representation of a Wasm heap type.
+    query wasm_heap_type_repr(env: ty::ParamEnvAnd<'tcx, Ty<'tcx>>) -> ty::util::WasmHeapTypeRepr {
+        desc { "computing Wasm heap type representation of `{}`", env.value }
     }
 }
 

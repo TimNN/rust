@@ -51,6 +51,11 @@ pub enum NotUniqueParam<'tcx> {
     NotParam(ty::GenericArg<'tcx>),
 }
 
+#[derive(Copy, Clone, Debug, HashStable, TyEncodable, TyDecodable)]
+pub enum WasmHeapTypeRepr {
+    ExternRef,
+}
+
 impl<'tcx> fmt::Display for Discr<'tcx> {
     fn fmt(&self, fmt: &mut fmt::Formatter<'_>) -> fmt::Result {
         match *self.ty.kind() {
@@ -1082,11 +1087,6 @@ impl<'tcx> Ty<'tcx> {
             | ty::Param(_)
             | ty::Placeholder(_) => false,
         }
-    }
-
-    // FIXME: Consider whether a "trivial" check like above is needed.
-    pub fn is_wasm_heap_ty(self, tcx: TyCtxt<'tcx>, param_env: ty::ParamEnv<'tcx>) -> bool {
-        tcx.sess.target.is_like_wasm && tcx.is_wasm_heap_ty_raw(param_env.and(self))
     }
 
     // FIXME: Consider whether a "trivial" check like above is needed.

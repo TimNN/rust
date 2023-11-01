@@ -1,56 +1,111 @@
-#![unstable(feature = "wasm_heap_types", issue = "none")]
+#![unstable(feature = "wasm_heap_types_v0", issue = "none")]
 #![allow(missing_debug_implementations, missing_docs)]
 
 use crate::marker::PhantomData;
+use crate::ptr;
 
-// FIXME: "error[E0198]: negative impls cannot be unsafe" seems wrong for
-// these traits. Potential workaround: for every public marker, create a
-// private mirror trait.
+#[lang = "wasm_heap_repr_nullable"]
+pub struct Nullable<T: ?Sized>(PhantomData<T>);
+#[lang = "wasm_heap_repr_nonnull"]
+pub struct NonNull<T: ?Sized>(PhantomData<T>);
+#[lang = "wasm_heap_repr_direct"]
+pub struct Direct<T: ?Sized>(PhantomData<T>);
 
-/// Marker trait applied to types that live on the WebAssembly heap.
-#[cfg_attr(not(bootstrap), lang = "wasm_heap_ty")]
-#[unstable(
-    feature = "wasm_heap_types_internals",
-    issue = "none",
-    reason = "permanently unstable implementation detail"
-)]
-unsafe auto trait WasmHeapType {}
+pub unsafe trait IsNonNull {}
+unsafe impl<T: ?Sized> IsNonNull for NonNull<T> {}
 
-/// Marker trait applied to pointers or references into the WebAssembly
-/// heap.
-#[cfg_attr(not(bootstrap), lang = "wasm_heap_ref")]
-pub unsafe auto trait WasmHeapRef {}
+pub unsafe trait IsNonNullOrDirect {}
+unsafe impl<T: ?Sized> IsNonNullOrDirect for NonNull<T> {}
+unsafe impl<T: ?Sized> IsNonNullOrDirect for Direct<T> {}
 
-unsafe impl<T: WasmHeapType + ?Sized> WasmHeapRef for *const T {}
-unsafe impl<T: WasmHeapType + ?Sized> WasmHeapRef for *mut T {}
-unsafe impl<T: WasmHeapType + ?Sized> WasmHeapRef for &T {}
-unsafe impl<T: WasmHeapType + ?Sized> WasmHeapRef for &mut T {}
+pub unsafe trait IsNonNullOrNullable {}
+unsafe impl<T: ?Sized> IsNonNullOrNullable for NonNull<T> {}
+unsafe impl<T: ?Sized> IsNonNullOrNullable for Nullable<T> {}
 
-// These marker traits primarily affect a type's layout computation, so
-// should not see through `PhantomData`.
-impl<T: ?Sized> !WasmHeapType for PhantomData<T> {}
-impl<T: ?Sized> !WasmHeapRef for PhantomData<T> {}
+pub unsafe trait WasmHeapTypeRepr {
+    type Raw: ?Sized;
+}
+
+unsafe impl<T: ?Sized> WasmHeapTypeRepr for Nullable<T> {
+    type Raw = T;
+}
+unsafe impl<T: ?Sized> WasmHeapTypeRepr for NonNull<T> {
+    type Raw = T;
+}
+unsafe impl<T: ?Sized> WasmHeapTypeRepr for Direct<T> {
+    type Raw = T;
+}
+
+pub unsafe trait WasmHeapTypeDescriptor {
+    #[lang = "wasm_heap_type_repr"]
+    type Repr: WasmHeapTypeRepr;
+}
+
+unsafe impl<T: WasmHeapTypeDescriptor + ?Sized> WasmHeapTypeDescriptor for &T {
+    type Repr = NonNull<<T::Repr as WasmHeapTypeRepr>::Raw>;
+}
+
+unsafe impl<T: WasmHeapTypeDescriptor + ?Sized> WasmHeapTypeDescriptor for &mut T {
+    type Repr = NonNull<<T::Repr as WasmHeapTypeRepr>::Raw>;
+}
+
+unsafe impl<T: WasmHeapTypeDescriptor + ?Sized> WasmHeapTypeDescriptor for ptr::NonNull<T> {
+    type Repr = NonNull<<T::Repr as WasmHeapTypeRepr>::Raw>;
+}
+
+unsafe impl<T: WasmHeapTypeDescriptor + ?Sized> WasmHeapTypeDescriptor for *const T
+where
+    T::Repr: IsNonNullOrDirect,
+{
+    type Repr = Nullable<<T::Repr as WasmHeapTypeRepr>::Raw>;
+}
+
+unsafe impl<T: WasmHeapTypeDescriptor + ?Sized> WasmHeapTypeDescriptor for *mut T
+where
+    T::Repr: IsNonNullOrDirect,
+{
+    type Repr = Nullable<<T::Repr as WasmHeapTypeRepr>::Raw>;
+}
+
+unsafe impl<T: WasmHeapTypeDescriptor> WasmHeapTypeDescriptor for Option<T>
+where
+    T::Repr: IsNonNull,
+{
+    type Repr = Nullable<<T::Repr as WasmHeapTypeRepr>::Raw>;
+}
+
+/// Trait that identifies pointers or references into the WebAssembly heap.
+#[lang = "wasm_heap_ref"]
+pub unsafe trait WasmHeapRef: WasmHeapTypeDescriptor {}
+
+unsafe impl<T: WasmHeapTypeDescriptor> WasmHeapRef for T where T::Repr: IsNonNullOrNullable {}
 
 extern "C" {
     /// The `extern` WebAssembly heap type.
     ///
     /// See [ExternRef].
-    #[cfg_attr(not(bootstrap), lang = "wasm_extern_ty")]
+    #[lang = "wasm_extern_ty"]
+    #[unstable(feature = "wasm_heap_types_v1", issue = "none")]
     pub type Extern;
 }
 
-unsafe impl WasmHeapType for Extern {}
+unsafe impl WasmHeapTypeDescriptor for Extern {
+    type Repr = Direct<Extern>;
+}
 
 /// The [`externref`] WebAssembly type.
 ///
 /// A nullable reference to [Extern].
 ///
 /// [`externref`]: https://webassembly.github.io/spec/core/syntax/types.html#syntax-reftype
+#[repr(transparent)]
 pub struct ExternRef(*const Extern);
 
-// FIXME: Consider `extern` support for `Global` and `Table`.
+unsafe impl WasmHeapTypeDescriptor for ExternRef {
+    type Repr = Nullable<Extern>;
+}
 
-// FIXME: Consider an `Index` implementation for `Table`.
+// FIXME: Consider `extern` support for `Global` and `Table`.
 
 /// Represents a WebAssembly [global].
 ///
@@ -60,8 +115,6 @@ pub struct ExternRef(*const Extern);
 ///
 /// [global]: https://webassembly.github.io/spec/core/syntax/modules.html#syntax-global
 pub trait Global<T: WasmHeapRef> {
-    fn instance() -> Self;
-
     fn get(&self) -> T;
 
     fn set(&self, val: T);
@@ -75,8 +128,6 @@ pub trait Global<T: WasmHeapRef> {
 ///
 /// [table]: https://webassembly.github.io/spec/core/syntax/modules.html#syntax-table
 pub trait Table<T: WasmHeapRef> {
-    fn instance() -> Self;
-
     fn get(&self, idx: u32) -> T;
 
     fn set(&self, idx: u32, val: T);
@@ -86,14 +137,14 @@ pub trait Table<T: WasmHeapRef> {
 #[unstable(
     feature = "wasm_heap_types_internals",
     issue = "none",
-    reason = "permanently unstable implementation detail"
+    reason = "permanently unstable implementation details"
 )]
 pub mod internals {
     use super::WasmHeapRef;
     use crate::marker::PhantomData;
 
     /// The type of the `static` containing the actual global.
-    #[cfg_attr(not(bootstrap), lang = "wasm_global_ty")]
+    #[lang = "wasm_global_ty"]
     pub struct GlobalImpl<T: WasmHeapRef>(PhantomData<T>);
 
     impl<T: WasmHeapRef> GlobalImpl<T> {
@@ -103,7 +154,7 @@ pub mod internals {
     }
 
     /// The type of the `static` containing the actual table.
-    #[cfg_attr(not(bootstrap), lang = "wasm_table_ty")]
+    #[lang = "wasm_table_ty"]
     pub struct TableImpl<T: WasmHeapRef>(PhantomData<T>);
 
     impl<T: WasmHeapRef> TableImpl<T> {
@@ -112,10 +163,18 @@ pub mod internals {
         }
     }
 
-    // The Wasm runtime is expected to synchronize access globals and tables if
-    // necessary.
+    // The Wasm runtime is expected to synchronize access to globals and tables
+    // if necessary.
     unsafe impl<T: WasmHeapRef> Sync for GlobalImpl<T> {}
     unsafe impl<T: WasmHeapRef> Sync for TableImpl<T> {}
+
+    pub trait NullabilityMarker {}
+
+    pub struct NonNull;
+    pub struct Nullable;
+
+    impl NullabilityMarker for NonNull {}
+    impl NullabilityMarker for Nullable {}
 }
 
 #[macro_export]

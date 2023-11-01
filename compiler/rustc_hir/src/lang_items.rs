@@ -332,8 +332,11 @@ language_item_table! {
     WasmExternTy,            sym::wasm_extern_ty,      wasm_extern_ty,             Target::ForeignTy,     GenericRequirement::None;
     WasmTableTy,             sym::wasm_table_ty,       wasm_table_ty,              Target::Struct,        GenericRequirement::Exact(1);
     WasmGlobalTy,            sym::wasm_global_ty,      wasm_global_ty,             Target::Struct,        GenericRequirement::Exact(1);
-    WasmHeapTy,              sym::wasm_heap_ty,        wasm_heap_ty,               Target::Trait,         GenericRequirement::None;
+    WasmHeapReprNullable,    sym::wasm_heap_repr_nullable, wasm_heap_repr_nullable,Target::Struct,        GenericRequirement::Exact(1);
+    WasmHeapReprNonNull,     sym::wasm_heap_repr_nonnull,  wasm_heap_repr_nonnull, Target::Struct,        GenericRequirement::Exact(1);
+    WasmHeapReprDirect,      sym::wasm_heap_repr_direct,   wasm_heap_repr_direct,  Target::Struct,        GenericRequirement::Exact(1);
     WasmHeapRef,             sym::wasm_heap_ref,       wasm_heap_ref,              Target::Trait,         GenericRequirement::None;
+    WasmHeapTypeRepr,        sym::wasm_heap_type_repr, wasm_heap_type_repr,        Target::AssocTy,       GenericRequirement::None;
 }
 
 pub enum GenericRequirement {

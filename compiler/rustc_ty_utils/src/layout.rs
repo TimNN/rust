@@ -155,7 +155,7 @@ fn layout_of_uncached<'tcx>(
 
         // Potentially-wide pointers.
         ty::Ref(_, pointee, _) | ty::RawPtr(ty::TypeAndMut { ty: pointee, .. }) => {
-            if pointee.is_wasm_heap_ty(cx.tcx, param_env) {
+            if ty.is_wasm_heap_ref(cx.tcx, param_env) {
                 return Ok(tcx.mk_layout(LayoutS::wasm_heap_ref()));
             }
 

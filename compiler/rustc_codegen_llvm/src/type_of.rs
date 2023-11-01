@@ -3,7 +3,7 @@ use crate::context::TypeLowering;
 use crate::type_::Type;
 use rustc_codegen_ssa::traits::*;
 use rustc_middle::bug;
-use rustc_middle::ty::layout::{LayoutOf, TyAndLayout};
+use rustc_middle::ty::layout::{HasParamEnv, LayoutOf, TyAndLayout};
 use rustc_middle::ty::print::{with_no_trimmed_paths, with_no_visible_paths};
 use rustc_middle::ty::{self, Ty, TypeVisitableExt};
 use rustc_target::abi::HasDataLayout;
@@ -36,7 +36,13 @@ fn uncached_llvm_type<'a, 'tcx>(
             );
         }
         Abi::Uninhabited | Abi::Aggregate { .. } => {}
-        Abi::WasmHeapRef => return cx.type_wasm_externref(), // TODO: Check Actual Type.
+        Abi::WasmHeapRef => {
+            use ty::util::WasmHeapTypeRepr::*;
+
+            return match cx.tcx.wasm_heap_type_repr(cx.param_env().and(layout.ty)) {
+                ExternRef => cx.type_wasm_externref(),
+            };
+        }
     }
 
     let name = match layout.ty.kind() {

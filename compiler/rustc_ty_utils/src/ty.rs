@@ -1,6 +1,6 @@
 use rustc_data_structures::fx::FxHashSet;
-use rustc_hir as hir;
 use rustc_hir::def::DefKind;
+use rustc_hir::{self as hir, LangItem};
 use rustc_index::bit_set::BitSet;
 use rustc_middle::query::Providers;
 use rustc_middle::ty::{self, EarlyBinder, Ty, TyCtxt, TypeVisitor};
@@ -351,6 +351,51 @@ fn unsizing_params_for_adt<'tcx>(tcx: TyCtxt<'tcx>, def_id: DefId) -> BitSet<u32
     unsizing_params
 }
 
+fn wasm_heap_type_repr<'tcx>(
+    tcx: TyCtxt<'tcx>,
+    query: ty::ParamEnvAnd<'tcx, Ty<'tcx>>,
+) -> ty::util::WasmHeapTypeRepr {
+    use ty::util::WasmHeapTypeRepr::*;
+
+    let (param_env, ty) = query.into_parts();
+    let proj =
+        Ty::new_projection(tcx, tcx.require_lang_item(LangItem::WasmHeapTypeRepr, None), [ty]);
+    let repr = tcx.normalize_erasing_regions(param_env, proj);
+
+    let ty::Adt(wrapper_def, args) = repr.kind() else {
+        bug!("Invalid WasmHeapTypeRepr: `{repr}`");
+    };
+
+    let [arg] = args.as_slice() else {
+        bug!("Invalid WasmHeapTypeRepr: `{repr}`");
+    };
+
+    let Some(raw_ty) = arg.as_type() else {
+        bug!("Invalid WasmHeapTypeRepr: `{repr}`");
+    };
+
+    let nullable = match wrapper_def.did() {
+        did if did == tcx.require_lang_item(LangItem::WasmHeapReprDirect, None) => {
+            bug!("`wasm_heap_type_repr` called with non-WasmHeapRef type: {ty}");
+        }
+        did if did == tcx.require_lang_item(LangItem::WasmHeapReprNonNull, None) => false,
+        did if did == tcx.require_lang_item(LangItem::WasmHeapReprNullable, None) => true,
+        _ => bug!("Invalid WasmHeapTypeRepr: `{repr}`"),
+    };
+
+    // Currently, only the built-in `externref` type is supported, which is
+    // always nullable, so ignore the computed nullability for now.
+    // TODO: Check against the layout.
+    let _ = nullable;
+
+    match raw_ty.kind() {
+        ty::Foreign(def) if *def == tcx.require_lang_item(LangItem::WasmExternTy, None) => {
+            ExternRef
+        }
+        _ => bug!("Unsupported raw Wasm type: `{raw_ty}`"),
+    }
+}
+
 pub fn provide(providers: &mut Providers) {
     *providers = Providers {
         asyncness,
@@ -360,6 +405,7 @@ pub fn provide(providers: &mut Providers) {
         issue33140_self_ty,
         defaultness,
         unsizing_params_for_adt,
+        wasm_heap_type_repr,
         ..*providers
     };
 }
