@@ -56,6 +56,8 @@ middle_drop_check_overflow =
 
 middle_erroneous_constant = erroneous constant encountered
 
+middle_invalid_wasm_type =
+    the type `{$ty}` is not valid in WebAssembly
 middle_layout_references_error =
     the type has an unknown layout
 
@@ -85,6 +87,3 @@ middle_unknown_layout =
 
 middle_values_too_big =
     values of the type `{$ty}` are too big for the current architecture
-
-middle_invalid_wasm_type =
-    the type `{$ty}` is not valid in WebAssembly

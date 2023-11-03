@@ -355,7 +355,7 @@ fn wasm_heap_type_repr<'tcx>(
     tcx: TyCtxt<'tcx>,
     query: ty::ParamEnvAnd<'tcx, Ty<'tcx>>,
 ) -> ty::util::WasmHeapTypeRepr {
-    use ty::util::WasmHeapTypeRepr::*;
+    use ty::util::WasmHeapType::*;
 
     let (param_env, ty) = query.into_parts();
     let proj =
@@ -383,17 +383,12 @@ fn wasm_heap_type_repr<'tcx>(
         _ => bug!("Invalid WasmHeapTypeRepr: `{repr}`"),
     };
 
-    // Currently, only the built-in `externref` type is supported, which is
-    // always nullable, so ignore the computed nullability for now.
-    // TODO: Check against the layout.
-    let _ = nullable;
-
-    match raw_ty.kind() {
-        ty::Foreign(def) if *def == tcx.require_lang_item(LangItem::WasmExternTy, None) => {
-            ExternRef
-        }
+    let heap_ty = match raw_ty.kind() {
+        ty::Foreign(def) if *def == tcx.require_lang_item(LangItem::WasmExternTy, None) => Extern,
         _ => bug!("Unsupported raw Wasm type: `{raw_ty}`"),
-    }
+    };
+
+    ty::util::WasmHeapTypeRepr { heap_ty, nullable }
 }
 
 pub fn provide(providers: &mut Providers) {

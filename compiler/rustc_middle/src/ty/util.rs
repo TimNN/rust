@@ -52,8 +52,14 @@ pub enum NotUniqueParam<'tcx> {
 }
 
 #[derive(Copy, Clone, Debug, HashStable, TyEncodable, TyDecodable)]
-pub enum WasmHeapTypeRepr {
-    ExternRef,
+pub enum WasmHeapType {
+    Extern,
+}
+
+#[derive(Copy, Clone, Debug, HashStable, TyEncodable, TyDecodable)]
+pub struct WasmHeapTypeRepr {
+    pub heap_ty: WasmHeapType,
+    pub nullable: bool,
 }
 
 impl<'tcx> fmt::Display for Discr<'tcx> {

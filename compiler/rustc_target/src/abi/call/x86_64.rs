@@ -74,7 +74,7 @@ where
 
                 return Ok(());
             }
-            Abi::WasmHeapRef => unreachable!("non-wasm arch"),
+            Abi::WasmHeapRef { .. } => unreachable!("non-wasm arch"),
         };
 
         // Fill in `cls` for scalars (Int/Sse) and vectors (Sse).

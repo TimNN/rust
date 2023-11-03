@@ -156,7 +156,7 @@ fn layout_of_uncached<'tcx>(
         // Potentially-wide pointers.
         ty::Ref(_, pointee, _) | ty::RawPtr(ty::TypeAndMut { ty: pointee, .. }) => {
             if ty.is_wasm_heap_ref(cx.tcx, param_env) {
-                return Ok(tcx.mk_layout(LayoutS::wasm_heap_ref()));
+                return Ok(tcx.mk_layout(LayoutS::wasm_heap_ref(ty.is_unsafe_ptr())));
             }
 
             let mut data_ptr = scalar_unit(Pointer(AddressSpace::DATA));

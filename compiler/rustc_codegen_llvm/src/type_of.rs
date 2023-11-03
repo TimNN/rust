@@ -36,11 +36,19 @@ fn uncached_llvm_type<'a, 'tcx>(
             );
         }
         Abi::Uninhabited | Abi::Aggregate { .. } => {}
-        Abi::WasmHeapRef => {
-            use ty::util::WasmHeapTypeRepr::*;
+        Abi::WasmHeapRef { nullable } => {
+            use ty::util::WasmHeapType::*;
 
-            return match cx.tcx.wasm_heap_type_repr(cx.param_env().and(layout.ty)) {
-                ExternRef => cx.type_wasm_externref(),
+            // LLVM currently only has support for the built-in `externref`
+            // type, which is nullable by definition.
+            //
+            // `improper_ctypes_definitions` will lint against non-null
+            // WasmHeapRefs across the FFI boundary, where the nullability
+            // cannot be enforced by Rust's type system.
+            let _ = nullable;
+
+            return match cx.tcx.wasm_heap_type_repr(cx.param_env().and(layout.ty)).heap_ty {
+                Extern => cx.type_wasm_externref(),
             };
         }
     }
@@ -199,9 +207,10 @@ impl<'tcx> LayoutLlvmExt<'tcx> for TyAndLayout<'tcx> {
     fn is_llvm_immediate(&self) -> bool {
         match self.abi {
             Abi::Scalar(_) | Abi::Vector { .. } => true,
-            Abi::ScalarPair(..) | Abi::Uninhabited | Abi::Aggregate { .. } | Abi::WasmHeapRef => {
-                false
-            }
+            Abi::ScalarPair(..)
+            | Abi::Uninhabited
+            | Abi::Aggregate { .. }
+            | Abi::WasmHeapRef { .. } => false,
         }
     }
 
@@ -212,7 +221,7 @@ impl<'tcx> LayoutLlvmExt<'tcx> for TyAndLayout<'tcx> {
             | Abi::Scalar(_)
             | Abi::Vector { .. }
             | Abi::Aggregate { .. }
-            | Abi::WasmHeapRef => false,
+            | Abi::WasmHeapRef { .. } => false,
         }
     }
 

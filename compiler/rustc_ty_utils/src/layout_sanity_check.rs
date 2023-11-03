@@ -71,6 +71,17 @@ pub(super) fn sanity_check_layout<'tcx>(
     }
 
     fn check_layout_abi<'tcx>(cx: &LayoutCx<'tcx, TyCtxt<'tcx>>, layout: &TyAndLayout<'tcx>) {
+        // Need to check this first, before potentially returning early if the
+        // ABI does not have an inherent size / align.
+        let ty_is_wasm_heap_ref = layout.ty.is_wasm_heap_ref(cx.tcx, cx.param_env);
+        if ty_is_wasm_heap_ref {
+            assert_matches!(
+                layout.layout.abi(),
+                Abi::WasmHeapRef { .. },
+                "Type implementing WasmHeapRef does not have WasmHeapRef ABI: {layout:#?}"
+            );
+        }
+
         // Verify the ABI mandated alignment and size.
         let align = layout.abi.inherent_align(cx).map(|align| align.abi);
         let size = layout.abi.inherent_size(cx);
@@ -242,7 +253,18 @@ pub(super) fn sanity_check_layout<'tcx>(
                 // FIXME: Do some kind of check of the inner type, like for Scalar and ScalarPair.
             }
             Abi::Uninhabited | Abi::Aggregate { .. } => {} // Nothing to check.
-            Abi::WasmHeapRef => {} // TODO(wasm_externref): compare expected.
+            Abi::WasmHeapRef { nullable: abi_nullable } => {
+                assert!(
+                    ty_is_wasm_heap_ref,
+                    "Type with WasmHeapRef ABI does not implement WasmHeapRef: {layout:#?}"
+                );
+
+                let repr = cx.tcx.wasm_heap_type_repr(cx.param_env.and(layout.ty));
+                assert_eq!(
+                    abi_nullable, repr.nullable,
+                    "WasmHeapRef ABI and trait disagree on nullability: {layout:#?}"
+                );
+            }
         }
     }
 

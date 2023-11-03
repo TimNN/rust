@@ -1253,7 +1253,9 @@ pub enum Abi {
     },
 
     // TODO: Document
-    WasmHeapRef,
+    WasmHeapRef {
+        nullable: bool,
+    },
 }
 
 impl Abi {
@@ -1265,7 +1267,7 @@ impl Abi {
             | Abi::Scalar(_)
             | Abi::ScalarPair(..)
             | Abi::Vector { .. }
-            | Abi::WasmHeapRef => false,
+            | Abi::WasmHeapRef { .. } => false,
             Abi::Aggregate { sized } => !sized,
         }
     }
@@ -1313,7 +1315,8 @@ impl Abi {
             Abi::Vector { element, count } => {
                 cx.data_layout().vector_align(element.size(cx) * count)
             }
-            Abi::Uninhabited | Abi::Aggregate { .. } | Abi::WasmHeapRef => return None,
+            Abi::WasmHeapRef { .. } => AbiAndPrefAlign::new(Align::ONE),
+            Abi::Uninhabited | Abi::Aggregate { .. } => return None,
         })
     }
 
@@ -1334,7 +1337,8 @@ impl Abi {
                 // to make the size a multiple of align (e.g. for vectors of size 3).
                 (element.size(cx) * count).align_to(self.inherent_align(cx)?.abi)
             }
-            Abi::Uninhabited | Abi::Aggregate { .. } | Abi::WasmHeapRef => return None,
+            Abi::WasmHeapRef { .. } => Size::from_bytes(1),
+            Abi::Uninhabited | Abi::Aggregate { .. } => return None,
         })
     }
 
@@ -1345,7 +1349,7 @@ impl Abi {
             Abi::ScalarPair(s1, s2) => Abi::ScalarPair(s1.to_union(), s2.to_union()),
             Abi::Vector { element, count } => Abi::Vector { element: element.to_union(), count },
             Abi::Uninhabited | Abi::Aggregate { .. } => Abi::Aggregate { sized: true },
-            Abi::WasmHeapRef => Abi::WasmHeapRef,
+            Abi::WasmHeapRef { .. } => panic!("WasmHeapRef cannot be part of union"),
         }
     }
 
@@ -1559,12 +1563,26 @@ impl<FieldIdx: Idx, VariantIdx: Idx> LayoutS<FieldIdx, VariantIdx> {
         }
     }
 
-    pub fn wasm_heap_ref() -> Self {
+    pub fn wasm_heap_ref(nullable: bool) -> Self {
+        let niche = if nullable {
+            Some(Niche {
+                // WasmHeapRefs always have a single non-ZST field.
+                offset: Size::ZERO,
+                // WasmHeapRefs use a fake size and align of `1`, so use a
+                // matching value for the niche.
+                value: Primitive::Int(Integer::I8, false),
+                // The only niche is `0`.
+                valid_range: WrappingRange::full(Size::from_bytes(1)).with_start(1),
+            })
+        } else {
+            None
+        };
+
         LayoutS {
             fields: FieldsShape::Primitive,
             variants: Variants::Single { index: VariantIdx::new(0) },
-            abi: Abi::WasmHeapRef,
-            largest_niche: None, // TODO: Nullable
+            abi: Abi::WasmHeapRef { nullable },
+            largest_niche: niche,
             align: AbiAndPrefAlign::new(Align::ONE),
             size: Size::from_bytes(1),
             max_repr_align: None,
@@ -1650,7 +1668,7 @@ impl<FieldIdx: Idx, VariantIdx: Idx> LayoutS<FieldIdx, VariantIdx> {
             Abi::Scalar(_) | Abi::ScalarPair(..) | Abi::Vector { .. } => false,
             Abi::Uninhabited => self.size.bytes() == 0,
             Abi::Aggregate { sized } => sized && self.size.bytes() == 0,
-            Abi::WasmHeapRef => false,
+            Abi::WasmHeapRef { .. } => false,
         }
     }
 

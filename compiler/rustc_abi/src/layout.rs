@@ -233,7 +233,7 @@ pub trait LayoutCalculator {
                     }
                     Abi::Vector { element, count: _ } => hide_niches(element),
                     Abi::Aggregate { sized: _ } => {}
-                    Abi::WasmHeapRef => {}
+                    Abi::WasmHeapRef { .. } => panic!("UnsafeCell cannot contain WasmHeapRef"),
                 }
                 st.largest_niche = None;
                 return Some(st);
@@ -424,6 +424,10 @@ pub trait LayoutCalculator {
                         } else {
                             Abi::ScalarPair(first.to_union(), niche_scalar)
                         }
+                    }
+                    Abi::WasmHeapRef { nullable } => {
+                        debug_assert!(nullable, "WasmheapRef with a niche must be nullable");
+                        panic!("got here!");
                     }
                     _ => Abi::Aggregate { sized: true },
                 }
@@ -1136,7 +1140,7 @@ fn univariant<
                         }
                         // References to the Wasm heap must always be passed as
                         // themselves.
-                        Abi::WasmHeapRef => {
+                        Abi::WasmHeapRef { .. } => {
                             abi = field.abi;
                         }
                         _ => {}
