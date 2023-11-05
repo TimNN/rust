@@ -206,11 +206,8 @@ pub trait LayoutLlvmExt<'tcx> {
 impl<'tcx> LayoutLlvmExt<'tcx> for TyAndLayout<'tcx> {
     fn is_llvm_immediate(&self) -> bool {
         match self.abi {
-            Abi::Scalar(_) | Abi::Vector { .. } => true,
-            Abi::ScalarPair(..)
-            | Abi::Uninhabited
-            | Abi::Aggregate { .. }
-            | Abi::WasmHeapRef { .. } => false,
+            Abi::Scalar(_) | Abi::Vector { .. } | Abi::WasmHeapRef { .. } => true,
+            Abi::ScalarPair(..) | Abi::Uninhabited | Abi::Aggregate { .. } => false,
         }
     }
 
@@ -237,6 +234,15 @@ impl<'tcx> LayoutLlvmExt<'tcx> for TyAndLayout<'tcx> {
     /// of that field's type - this is useful for taking the address of
     /// that field and ensuring the struct has the right alignment.
     fn llvm_type<'a>(&self, cx: &CodegenCx<'a, 'tcx>) -> &'a Type {
+        if self.ty.is_wasm_table_ty(cx.tcx) {
+            // TODO
+            return cx.type_array(cx.type_wasm_externref(), 0);
+        }
+        if self.ty.is_wasm_global_ty(cx.tcx) {
+            // TODO
+            return cx.type_wasm_externref();
+        }
+
         // This must produce the same result for `repr(transparent)` wrappers as for the inner type!
         // In other words, this should generally not look at the type at all, but only at the
         // layout.

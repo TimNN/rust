@@ -75,7 +75,13 @@ pub(crate) unsafe fn codegen(
 
     // __rust_alloc_error_handler_should_panic
     let name = OomStrategy::SYMBOL;
-    let ll_g = llvm::LLVMRustGetOrInsertGlobal(llmod, name.as_ptr().cast(), name.len(), i8);
+    let ll_g = llvm::LLVMRustGetOrInsertGlobal(
+        llmod,
+        name.as_ptr().cast(),
+        name.len(),
+        i8,
+        /*AddressSpace=*/ 0,
+    );
     if tcx.sess.target.default_hidden_visibility {
         llvm::LLVMRustSetVisibility(ll_g, llvm::Visibility::Hidden);
     }
@@ -84,7 +90,13 @@ pub(crate) unsafe fn codegen(
     llvm::LLVMSetInitializer(ll_g, llval);
 
     let name = NO_ALLOC_SHIM_IS_UNSTABLE;
-    let ll_g = llvm::LLVMRustGetOrInsertGlobal(llmod, name.as_ptr().cast(), name.len(), i8);
+    let ll_g = llvm::LLVMRustGetOrInsertGlobal(
+        llmod,
+        name.as_ptr().cast(),
+        name.len(),
+        i8,
+        /*AddressSpace=*/ 0,
+    );
     if tcx.sess.target.default_hidden_visibility {
         llvm::LLVMRustSetVisibility(ll_g, llvm::Visibility::Hidden);
     }

@@ -425,10 +425,7 @@ pub trait LayoutCalculator {
                             Abi::ScalarPair(first.to_union(), niche_scalar)
                         }
                     }
-                    Abi::WasmHeapRef { nullable } => {
-                        debug_assert!(nullable, "WasmheapRef with a niche must be nullable");
-                        panic!("got here!");
-                    }
+                    Abi::WasmHeapRef { nullable: false } => Abi::WasmHeapRef { nullable: true },
                     _ => Abi::Aggregate { sized: true },
                 }
             } else {

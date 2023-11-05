@@ -23,7 +23,8 @@ fn is_unpin_raw<'tcx>(tcx: TyCtxt<'tcx>, query: ty::ParamEnvAnd<'tcx, Ty<'tcx>>)
 }
 
 fn is_wasm_heap_ref_raw<'tcx>(tcx: TyCtxt<'tcx>, query: ty::ParamEnvAnd<'tcx, Ty<'tcx>>) -> bool {
-    is_item_raw(tcx, query, LangItem::WasmHeapRef)
+    // TODO
+    is_item_raw(tcx, query, LangItem::WasmIsHeapRef)
 }
 
 fn is_item_raw<'tcx>(

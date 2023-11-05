@@ -1100,6 +1100,43 @@ impl<'tcx> Ty<'tcx> {
         tcx.sess.target.is_like_wasm && tcx.is_wasm_heap_ref_raw(param_env.and(self))
     }
 
+    pub fn is_wasm_global_ty(self, tcx: TyCtxt<'tcx>) -> bool {
+        if !tcx.sess.target.is_like_wasm {
+            return false;
+        }
+
+        let ty::Adt(def, _) = self.kind() else {
+            return false;
+        };
+
+        return Some(def.did()) == tcx.lang_items().wasm_global_ty();
+    }
+
+    pub fn is_wasm_table_ty(self, tcx: TyCtxt<'tcx>) -> bool {
+        if !tcx.sess.target.is_like_wasm {
+            return false;
+        }
+
+        let ty::Adt(def, _) = self.kind() else {
+            return false;
+        };
+
+        return Some(def.did()) == tcx.lang_items().wasm_table_ty();
+    }
+
+    pub fn is_wasm_special_static(self, tcx: TyCtxt<'tcx>) -> bool {
+        if !tcx.sess.target.is_like_wasm {
+            return false;
+        }
+
+        let ty::Adt(def, _) = self.kind() else {
+            return false;
+        };
+
+        return Some(def.did()) == tcx.lang_items().wasm_global_ty()
+            || Some(def.did()) == tcx.lang_items().wasm_table_ty();
+    }
+
     /// If `ty.needs_drop(...)` returns `true`, then `ty` is definitely
     /// non-copy and *might* have a destructor attached; if it returns
     /// `false`, then `ty` definitely has no destructor (i.e., no drop glue).

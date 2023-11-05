@@ -1,4 +1,5 @@
 // only-wasm32
+// assembly-output: emit-asm
 
 // compile-flags: --edition=2021 -Zmerge-functions=disabled -Aunused-imports -Aimproper_ctypes_definitions
 //-Cno-prepopulate-passes

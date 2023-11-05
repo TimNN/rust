@@ -1565,6 +1565,8 @@ impl<FieldIdx: Idx, VariantIdx: Idx> LayoutS<FieldIdx, VariantIdx> {
 
     pub fn wasm_heap_ref(nullable: bool) -> Self {
         let niche = if nullable {
+            None
+        } else {
             Some(Niche {
                 // WasmHeapRefs always have a single non-ZST field.
                 offset: Size::ZERO,
@@ -1574,8 +1576,6 @@ impl<FieldIdx: Idx, VariantIdx: Idx> LayoutS<FieldIdx, VariantIdx> {
                 // The only niche is `0`.
                 valid_range: WrappingRange::full(Size::from_bytes(1)).with_start(1),
             })
-        } else {
-            None
         };
 
         LayoutS {

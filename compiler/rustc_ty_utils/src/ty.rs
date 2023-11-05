@@ -357,6 +357,15 @@ fn wasm_heap_type_repr<'tcx>(
 ) -> ty::util::WasmHeapTypeRepr {
     use ty::util::WasmHeapType::*;
 
+    let _ = LangItem::WasmHeapTypeRepr;
+    let _ = (tcx, query);
+
+    // TODO
+    return ty::util::WasmHeapTypeRepr { heap_ty: Extern, nullable: true };
+
+    // TODO
+
+    /*
     let (param_env, ty) = query.into_parts();
     let proj =
         Ty::new_projection(tcx, tcx.require_lang_item(LangItem::WasmHeapTypeRepr, None), [ty]);
@@ -389,6 +398,8 @@ fn wasm_heap_type_repr<'tcx>(
     };
 
     ty::util::WasmHeapTypeRepr { heap_ty, nullable }
+
+    */
 }
 
 pub fn provide(providers: &mut Providers) {

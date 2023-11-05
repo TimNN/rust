@@ -177,7 +177,9 @@ extern "C" LLVMValueRef LLVMRustGetOrInsertFunction(LLVMModuleRef M,
 }
 
 extern "C" LLVMValueRef
-LLVMRustGetOrInsertGlobal(LLVMModuleRef M, const char *Name, size_t NameLen, LLVMTypeRef Ty) {
+LLVMRustGetOrInsertGlobal(
+    LLVMModuleRef M, const char *Name, size_t NameLen, LLVMTypeRef Ty,
+    unsigned AddressSpace) {
   Module *Mod = unwrap(M);
   StringRef NameRef(Name, NameLen);
 
@@ -188,7 +190,9 @@ LLVMRustGetOrInsertGlobal(LLVMModuleRef M, const char *Name, size_t NameLen, LLV
   GlobalVariable *GV = Mod->getGlobalVariable(NameRef, true);
   if (!GV)
     GV = new GlobalVariable(*Mod, unwrap(Ty), false,
-                            GlobalValue::ExternalLinkage, nullptr, NameRef);
+                            GlobalValue::ExternalLinkage, nullptr, NameRef,
+                            nullptr, GlobalValue::NotThreadLocal, 
+                            AddressSpace == 0 ? std::nullopt : std::make_optional(AddressSpace));
   return wrap(GV);
 }
 

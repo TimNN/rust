@@ -35,6 +35,7 @@ use rustc_target::spec::{HasTargetSpec, RelocModel, Target, TlsModel};
 use smallvec::SmallVec;
 
 use libc::c_uint;
+use rustc_target::abi::AddressSpace;
 use std::cell::{Cell, RefCell};
 use std::ffi::CStr;
 use std::str;
@@ -945,6 +946,14 @@ impl<'ll> CodegenCx<'ll, '_> {
             ifn!("llvm.dbg.value", fn(t_metadata, t_i64, t_metadata) -> void);
         }
 
+        if self.sess().target.is_like_wasm {
+            let ptr1 = self.type_ptr_ext(AddressSpace(1));
+            let extref = self.type_wasm_externref();
+
+            ifn!("llvm.wasm.table.get.externref", fn(ptr1, t_i32) -> extref);
+            ifn!("llvm.wasm.table.set.externref", fn(ptr1, t_i32, extref) -> void);
+        }
+
         ifn!("llvm.ptrmask", fn(ptr, t_isize) -> ptr);
 
         None
@@ -960,7 +969,7 @@ impl<'ll> CodegenCx<'ll, '_> {
             Some(def_id) => self.get_static(def_id),
             _ => {
                 let ty = self.type_struct(&[self.type_ptr(), self.type_ptr()], false);
-                self.declare_global("rust_eh_catch_typeinfo", ty)
+                self.declare_global("rust_eh_catch_typeinfo", ty, 0)
             }
         };
         self.eh_catch_typeinfo.set(Some(eh_catch_typeinfo));

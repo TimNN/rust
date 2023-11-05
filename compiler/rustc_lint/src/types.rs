@@ -1065,6 +1065,7 @@ impl<'a, 'tcx> ImproperCTypesVisitor<'a, 'tcx> {
                     return FfiPhantom(ty);
                 }
                 if ty.is_wasm_heap_ref(tcx, self.cx.param_env) {
+                    // TODO: Take nullability into account.
                     return FfiSafe;
                 }
                 match def.adt_kind() {

@@ -68,7 +68,7 @@ pub fn get_or_insert_gdb_debug_scripts_section_global<'ll>(cx: &CodegenCx<'ll, '
             let llvm_type = cx.type_array(cx.type_i8(), section_contents.len() as u64);
 
             let section_var = cx
-                .define_global(section_var_name, llvm_type)
+                .define_global(section_var_name, llvm_type, 0)
                 .unwrap_or_else(|| bug!("symbol `{}` is already defined", section_var_name));
             llvm::LLVMSetSection(section_var, section_name.as_ptr().cast());
             llvm::LLVMSetInitializer(section_var, cx.const_bytes(section_contents));

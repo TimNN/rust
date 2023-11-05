@@ -18,6 +18,7 @@ use crate::llvm;
 use crate::llvm::AttributePlace::Function;
 use crate::type_::Type;
 use crate::value::Value;
+use libc::c_uint;
 use rustc_codegen_ssa::traits::TypeMembershipMethods;
 use rustc_middle::ty::{Instance, Ty};
 use rustc_symbol_mangling::typeid::{
@@ -65,9 +66,17 @@ impl<'ll, 'tcx> CodegenCx<'ll, 'tcx> {
     ///
     /// If there’s a value with the same name already declared, the function will
     /// return its Value instead.
-    pub fn declare_global(&self, name: &str, ty: &'ll Type) -> &'ll Value {
+    pub fn declare_global(&self, name: &str, ty: &'ll Type, address_space: c_uint) -> &'ll Value {
         debug!("declare_global(name={:?})", name);
-        unsafe { llvm::LLVMRustGetOrInsertGlobal(self.llmod, name.as_ptr().cast(), name.len(), ty) }
+        unsafe {
+            llvm::LLVMRustGetOrInsertGlobal(
+                self.llmod,
+                name.as_ptr().cast(),
+                name.len(),
+                ty,
+                address_space,
+            )
+        }
     }
 
     /// Declare a C ABI function.
@@ -199,11 +208,16 @@ impl<'ll, 'tcx> CodegenCx<'ll, 'tcx> {
     /// return `None` if the name already has a definition associated with it. In that
     /// case an error should be reported to the user, because it usually happens due
     /// to user’s fault (e.g., misuse of `#[no_mangle]` or `#[export_name]` attributes).
-    pub fn define_global(&self, name: &str, ty: &'ll Type) -> Option<&'ll Value> {
+    pub fn define_global(
+        &self,
+        name: &str,
+        ty: &'ll Type,
+        address_space: c_uint,
+    ) -> Option<&'ll Value> {
         if self.get_defined_value(name).is_some() {
             None
         } else {
-            Some(self.declare_global(name, ty))
+            Some(self.declare_global(name, ty, address_space))
         }
     }
 

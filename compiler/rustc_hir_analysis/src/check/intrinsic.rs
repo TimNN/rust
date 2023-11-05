@@ -478,6 +478,46 @@ pub fn check_intrinsic_type(tcx: TyCtxt<'_>, it: &hir::ForeignItem<'_>) {
                 (0, vec![Ty::new_imm_ptr(tcx, Ty::new_unit(tcx))], tcx.types.usize)
             }
 
+            sym::wasm_global_get
+            | sym::wasm_global_set
+            | sym::wasm_table_get
+            | sym::wasm_table_set => {
+                let is_table = [sym::wasm_table_get, sym::wasm_table_set].contains(&intrinsic_name);
+                let is_set = [sym::wasm_global_set, sym::wasm_table_set].contains(&intrinsic_name);
+
+                let static_ref_ty = {
+                    let def_id = tcx.require_lang_item(
+                        if is_table {
+                            hir::LangItem::WasmTableTy
+                        } else {
+                            hir::LangItem::WasmGlobalTy
+                        },
+                        None,
+                    );
+                    let def = tcx.adt_def(def_id);
+                    let args = ty::GenericArgs::for_item(tcx, def_id, |_, _| param(0).into());
+                    let ty = Ty::new_adt(tcx, def, args);
+
+                    let br = ty::BoundRegion { var: ty::BoundVar::from_u32(0), kind: ty::BrAnon };
+                    Ty::new_imm_ref(tcx, ty::Region::new_late_bound(tcx, ty::INNERMOST, br), ty)
+                };
+
+                let ret;
+                let mut args = Vec::with_capacity(3);
+                args.push(static_ref_ty);
+                if is_table {
+                    args.push(tcx.types.u32)
+                }
+                if is_set {
+                    args.push(param(0));
+                    ret = tcx.types.unit;
+                } else {
+                    ret = param(0);
+                }
+
+                (1, args, ret)
+            }
+
             other => {
                 tcx.sess.emit_err(UnrecognizedIntrinsicFunction { span: it.span, name: other });
                 return;
