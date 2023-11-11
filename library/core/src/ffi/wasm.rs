@@ -67,6 +67,7 @@ impl<T: HeapTypeRepr + ?Sized> Clone for HeapRef<T> {
 // rustdoc, and that it ensures that types have to explicitly opt-in to
 // containing `HeapRef`s.
 pub trait IsHeapRef {
+    #[lang = "wasm_is_heap_ref_nullability"]
     type Nullability;
 }
 
@@ -108,4 +109,12 @@ pub struct ExternRef(Option<HeapRef<Extern>>);
 
 impl IsHeapRef for ExternRef {
     type Nullability = nullability_marker::Nullable;
+}
+
+impl Copy for ExternRef {}
+
+impl Clone for ExternRef {
+    fn clone(&self) -> Self {
+        unreachable!();
+    }
 }

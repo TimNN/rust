@@ -702,6 +702,7 @@ pub enum InlineAsmType {
     VecI128(u64),
     VecF32(u64),
     VecF64(u64),
+    WasmHeapRef,
 }
 
 impl InlineAsmType {
@@ -725,6 +726,7 @@ impl InlineAsmType {
             Self::VecI128(n) => n * 16,
             Self::VecF32(n) => n * 4,
             Self::VecF64(n) => n * 8,
+            Self::WasmHeapRef => 1,
         })
     }
 }
@@ -746,6 +748,7 @@ impl fmt::Display for InlineAsmType {
             Self::VecI128(n) => write!(f, "i128x{n}"),
             Self::VecF32(n) => write!(f, "f32x{n}"),
             Self::VecF64(n) => write!(f, "f64x{n}"),
+            Self::WasmHeapRef => f.write_str("WasmHeapRef"),
         }
     }
 }

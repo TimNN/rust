@@ -1,0 +1,12 @@
+error[E0690]: transparent struct needs at most one field with non-trivial size or alignment, but has 2
+  --> $DIR/wasm-is-heap-ref-impl-invalid-transparent.rs:14:1
+   |
+LL | struct InvalidTransparent(ExternRef, ExternRef);
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^ ---------  --------- this field has non-zero size or requires alignment
+   | |                         |
+   | |                         this field has non-zero size or requires alignment
+   | needs at most one field with non-trivial size or alignment, but has 2
+
+error: aborting due to previous error
+
+For more information about this error, try `rustc --explain E0690`.

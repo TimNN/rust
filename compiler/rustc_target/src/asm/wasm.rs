@@ -35,7 +35,7 @@ impl WasmInlineAsmRegClass {
     ) -> &'static [(InlineAsmType, Option<Symbol>)] {
         match self {
             Self::local => {
-                types! { _: I8, I16, I32, I64, F32, F64; }
+                types! { _: I8, I16, I32, I64, F32, F64, WasmHeapRef; }
             }
         }
     }

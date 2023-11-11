@@ -642,7 +642,6 @@ extern "rust-intrinsic" {
     fn va_arg<T: sealed_trait::VaArgSafe>(ap: &mut VaListImpl<'_>) -> T;
 }
 
-// #[cfg(any(target_family = "wasm", doc))] // TODO: uncomment.
-#[cfg(not(bootstrap))]
+#[cfg(all(not(bootstrap), any(target_family = "wasm", doc)))] // TODO: uncomment.
 #[doc(cfg(target_family = "wasm"))]
 pub mod wasm;

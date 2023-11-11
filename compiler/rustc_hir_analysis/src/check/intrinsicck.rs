@@ -109,6 +109,7 @@ impl<'a, 'tcx> InlineAsmCtxt<'a, 'tcx> {
                     _ => None,
                 }
             }
+            _ if ty.is_wasm_heap_ref(self.tcx, self.param_env) => Some(InlineAsmType::WasmHeapRef),
             ty::Infer(_) => unreachable!(),
             _ => None,
         }

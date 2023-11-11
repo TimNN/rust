@@ -1,0 +1,44 @@
+error: `IsHeapRef` may only be implemented for `struct` types.
+  --> $DIR/wasm-is-heap-ref-impl-invalid.rs:15:20
+   |
+LL | impl IsHeapRef for UnionNotStruct {
+   |                    ^^^^^^^^^^^^^^
+
+error: `IsHeapRef` may only be implemented for `struct` types.
+  --> $DIR/wasm-is-heap-ref-impl-invalid.rs:25:20
+   |
+LL | impl IsHeapRef for EnumNotStruct {
+   |                    ^^^^^^^^^^^^^
+
+error: `IsHeapRef` may only be implemented for `#[repr(transparent)]` types.
+  --> $DIR/wasm-is-heap-ref-impl-invalid.rs:33:20
+   |
+LL | impl IsHeapRef for NotTransparent {
+   |                    ^^^^^^^^^^^^^^
+
+error: `IsHeapRef` implemented for type that does not contain a `IsHeapRef` field.
+  --> $DIR/wasm-is-heap-ref-impl-invalid.rs:42:20
+   |
+LL | impl IsHeapRef for OnlyZst {
+   |                    ^^^^^^^
+
+error: Field 1 (*const ()) does not implement `IsHeapRef`.
+  --> $DIR/wasm-is-heap-ref-impl-invalid.rs:51:20
+   |
+LL | impl IsHeapRef for FieldNotHeapRef {
+   |                    ^^^^^^^^^^^^^^^
+
+error: Field 0 (T) does not implement `IsHeapRef`.
+  --> $DIR/wasm-is-heap-ref-impl-invalid.rs:60:23
+   |
+LL | impl<T> IsHeapRef for GenericNotOkay<T> {
+   |                       ^^^^^^^^^^^^^^^^^
+
+error: Nullability mismatch. Self: `core::ffi::wasm::nullability_marker::Nullable` Field: `<T as IsHeapRef>::Nullability`
+  --> $DIR/wasm-is-heap-ref-impl-invalid.rs:69:34
+   |
+LL | impl<T: IsHeapRef> IsHeapRef for GenericNullabilityMismatch<T> {
+   |                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: aborting due to 7 previous errors
+

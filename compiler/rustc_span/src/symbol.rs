@@ -1802,6 +1802,7 @@ symbols! {
         wasm_heap_type_repr,
         wasm_import_module,
         wasm_is_heap_ref,
+        wasm_is_heap_ref_nullability,
         wasm_target_feature,
         while_let,
         width,

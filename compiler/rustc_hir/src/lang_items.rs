@@ -333,6 +333,7 @@ language_item_table! {
     WasmHeapRefTy,           sym::wasm_heap_ref_ty,    wasm_heap_ref_ty,           Target::Struct,        GenericRequirement::Exact(1);
     WasmHeapTypeRepr,        sym::wasm_heap_type_repr, wasm_heap_type_repr,        Target::Trait,         GenericRequirement::None;
     WasmIsHeapRef,           sym::wasm_is_heap_ref,    wasm_is_heap_ref,           Target::Trait,         GenericRequirement::None;
+    WasmIsHeapRefNullability,sym::wasm_is_heap_ref_nullability, wasm_is_heap_ref_nullability, Target::AssocTy, GenericRequirement::None;
 }
 
 pub enum GenericRequirement {
