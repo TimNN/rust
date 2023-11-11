@@ -57,7 +57,6 @@ impl<T: HeapTypeRepr + ?Sized> Clone for HeapRef<T> {
 
 #[lang = "wasm_is_heap_ref"]
 #[unstable(feature = "wasm_heap_types_v1", issue = "none")]
-#[rustc_deny_explicit_impl(implement_via_object = false)]
 // FIXME: Add an appropriate `rustc_on_unimplemented` attribute.
 // DESIGN/FIXME: I went back-and-forth on this a _lot_: Should this trait
 // be automatically implemented by the compiler? Or manually for every type?
@@ -67,152 +66,23 @@ impl<T: HeapTypeRepr + ?Sized> Clone for HeapRef<T> {
 // major advantages of a manual implementation are that it shows up better in
 // rustdoc, and that it ensures that types have to explicitly opt-in to
 // containing `HeapRef`s.
-pub trait IsHeapRef {}
-
-// FIXME: Consider `extern` support for `Global` and `Table`.
-
-/// Represents a WebAssembly [global].
-///
-/// Every reference to a global must be *compile time constant*. In Rust,
-/// this means that every global is a separate type, defined with the
-/// [global!] macro.
-///
-/// [global]: https://webassembly.github.io/spec/core/syntax/modules.html#syntax-global
-pub trait Global<T: IsHeapRef> {
-    fn get(&self) -> T;
-
-    fn set(&self, val: T);
-}
-
-/// Represents a WebAssembly [table].
-///
-/// Every reference to a table must be *compile time constant*. In Rust,
-/// this means that every table is a separate type, defined with the
-/// [table!] macro.
-///
-/// [table]: https://webassembly.github.io/spec/core/syntax/modules.html#syntax-table
-pub trait Table<T: IsHeapRef> {
-    fn get(&self, idx: u32) -> T;
-
-    fn set(&self, idx: u32, val: T);
+pub trait IsHeapRef {
+    type Nullability;
 }
 
 #[unstable(feature = "wasm_heap_types_v1", issue = "none")]
-// FIXME: Add an appropriate `rustc_on_unimplemented` attribute.
-// FIXME: Consider including nullability information in `IsHeapRef`, to make
-// this trait slightly safer. (Or get rid of it entirely, if we can support an
-// explicit initializer).
-pub unsafe trait IsHeapRefWithNullInitAllowed: IsHeapRef {}
-
-/// Perma-unstable internals, primarily for use via macros.
-#[doc(hidden)]
-#[unstable(feature = "wasm_heap_types_internals", issue = "none")]
-pub mod internals {
-    use super::{IsHeapRef, IsHeapRefWithNullInitAllowed};
-    use crate::cell::UnsafeCell;
-    use crate::marker::PhantomData;
-
-    /// The type of the `static` containing the actual global.
-    #[lang = "wasm_global_ty"]
-    // This contains an `UnsafeCell` to ensure it is considered mutable by
-    // codegen. (Though it doesn't seem to make a difference to LLVM).
-    pub struct GlobalImpl<T: IsHeapRef>(UnsafeCell<PhantomData<T>>);
-
-    impl<T: IsHeapRefWithNullInitAllowed> GlobalImpl<T> {
-        pub const fn new() -> Self {
-            GlobalImpl(UnsafeCell::new(PhantomData))
-        }
-    }
-
-    /// The type of the `static` containing the actual table.
-    #[lang = "wasm_table_ty"]
-    // See `GlobalImpl` for why this contains an `UnsafeCell`.
-    pub struct TableImpl<T: IsHeapRef>(UnsafeCell<PhantomData<T>>);
-
-    impl<T: IsHeapRef> TableImpl<T> {
-        pub const fn new() -> Self {
-            TableImpl(UnsafeCell::new(PhantomData))
-        }
-    }
-
-    extern "rust-intrinsic" {
-        pub fn wasm_global_get<T: IsHeapRef>(tbl: &GlobalImpl<T>) -> T;
-        pub fn wasm_global_set<T: IsHeapRef>(tbl: &GlobalImpl<T>, val: T);
-        pub fn wasm_table_get<T: IsHeapRef>(tbl: &TableImpl<T>, idx: u32) -> T;
-        pub fn wasm_table_set<T: IsHeapRef>(tbl: &TableImpl<T>, idx: u32, val: T);
-    }
-
-    // The Wasm runtime is expected to synchronize access to globals and tables
-    // if necessary.
-    unsafe impl<T: IsHeapRef> Sync for GlobalImpl<T> {}
-    unsafe impl<T: IsHeapRef> Sync for TableImpl<T> {}
+pub mod nullability_marker {
+    pub enum NonNull {}
+    pub enum Nullable {}
 }
 
-#[macro_export]
-#[allow_internal_unstable(wasm_heap_types_internals)]
-macro_rules! global {
-    ($vis:vis $name:ident: $Ty:ty) => {
-        $vis struct $name;
-
-        // Items (including `static`s) in macro_rules! are not hygienic, so hide
-        // the `static` so it doesn't generate name colissions.
-        const _: () = {
-            static GLOBAL: $crate::ffi::wasm::internals::GlobalImpl<$Ty> =
-                $crate::ffi::wasm::internals::GlobalImpl::new();
-
-            impl $crate::ffi::wasm::Global<$Ty> for $name {
-
-                #[inline]
-                fn get(&self) -> $Ty {
-                    unsafe {
-                        $crate::ffi::wasm::internals::wasm_global_get(&GLOBAL)
-                    }
-                }
-
-                #[inline]
-                fn set(&self, val: $Ty) {
-                    unsafe {
-                        $crate::ffi::wasm::internals::wasm_global_set(&GLOBAL, val)
-                    }
-                }
-            }
-        };
-    }
+impl<T: HeapTypeRepr + ?Sized> IsHeapRef for HeapRef<T> {
+    type Nullability = nullability_marker::NonNull;
 }
 
-#[macro_export]
-#[allow_internal_unstable(wasm_heap_types_internals)]
-macro_rules! table {
-    ($vis:vis $name:ident: $Ty:ty) => {
-        $vis struct $name;
-
-        // Items (including `static`s) in macro_rules! are not hygienic, so hide
-        // the `static` so it doesn't generate name colissions.
-        const _: () = {
-            static TABLE: $crate::ffi::wasm::internals::TableImpl<$Ty> =
-                $crate::ffi::wasm::internals::TableImpl::new();
-
-            impl $crate::ffi::wasm::Table<$Ty> for $name {
-
-                #[inline]
-                fn get(&self, idx: u32) -> $Ty {
-                    unsafe {
-                        $crate::ffi::wasm::internals::wasm_table_get(&TABLE, idx)
-                    }
-                }
-
-                #[inline]
-                fn set(&self, idx: u32, val: $Ty) {
-                    unsafe {
-                        $crate::ffi::wasm::internals::wasm_table_set(&TABLE, idx, val)
-                    }
-                }
-            }
-        };
-    }
+impl<T: IsHeapRef<Nullability = nullability_marker::NonNull>> IsHeapRef for Option<T> {
+    type Nullability = nullability_marker::Nullable;
 }
-
-pub use {global, table};
 
 extern "C" {
     /// The `extern` WebAssembly heap type.
@@ -235,3 +105,7 @@ impl HeapTypeRepr for Extern {
 /// [`externref`]: https://webassembly.github.io/spec/core/syntax/types.html#syntax-reftype
 #[repr(transparent)]
 pub struct ExternRef(Option<HeapRef<Extern>>);
+
+impl IsHeapRef for ExternRef {
+    type Nullability = nullability_marker::Nullable;
+}

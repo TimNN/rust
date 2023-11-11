@@ -23,9 +23,8 @@ impl<'tcx> PreDefineMethods<'tcx> for CodegenCx<'_, 'tcx> {
         let instance = Instance::mono(self.tcx, def_id);
         let ty = instance.ty(self.tcx, ty::ParamEnv::reveal_all());
         let llty = self.layout_of(ty).llvm_type(self);
-        let address_space = if ty.is_wasm_special_static(self.tcx) { 1 } else { 0 };
 
-        let g = self.define_global(symbol_name, llty, address_space).unwrap_or_else(|| {
+        let g = self.define_global(symbol_name, llty).unwrap_or_else(|| {
             self.sess()
                 .emit_fatal(SymbolAlreadyDefined { span: self.tcx.def_span(def_id), symbol_name })
         });

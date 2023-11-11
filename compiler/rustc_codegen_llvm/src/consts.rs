@@ -122,19 +122,6 @@ pub fn codegen_static_initializer<'ll, 'tcx>(
     cx: &CodegenCx<'ll, 'tcx>,
     def_id: DefId,
 ) -> Result<(&'ll Value, ConstAllocation<'tcx>), ErrorHandled> {
-    // FIXME: Fail on `Err`?
-
-    let instance = Instance::mono(cx.tcx, def_id);
-    let ty = instance.ty(cx.tcx, ty::ParamEnv::reveal_all());
-
-    if ty.is_wasm_special_static(cx.tcx) {
-        let llty = cx.layout_of(ty).llvm_type(cx);
-        return Ok((
-            cx.const_undef(llty),
-            cx.tcx.mk_const_alloc(Allocation::uninit(Size::ZERO, Align::ONE)),
-        ));
-    }
-
     let alloc = cx.tcx.eval_static_initializer(def_id)?;
     Ok((const_alloc_to_llvm(cx, alloc), alloc))
 }
@@ -174,7 +161,7 @@ fn check_and_apply_linkage<'ll, 'tcx>(
 
         unsafe {
             // Declare a symbol `foo` with the desired linkage.
-            let g1 = cx.declare_global(sym, cx.type_i8(), 0);
+            let g1 = cx.declare_global(sym, cx.type_i8());
             llvm::LLVMRustSetLinkage(g1, base::linkage_to_llvm(linkage));
 
             // Declare an internal global `extern_with_linkage_foo` which
@@ -185,7 +172,7 @@ fn check_and_apply_linkage<'ll, 'tcx>(
             // zero.
             let mut real_name = "_rust_extern_with_linkage_".to_string();
             real_name.push_str(sym);
-            let g2 = cx.define_global(&real_name, llty, 0).unwrap_or_else(|| {
+            let g2 = cx.define_global(&real_name, llty).unwrap_or_else(|| {
                 cx.sess().emit_fatal(SymbolAlreadyDefined {
                     span: cx.tcx.def_span(def_id),
                     symbol_name: sym,
@@ -205,12 +192,11 @@ fn check_and_apply_linkage<'ll, 'tcx>(
                 true,
             ),
             llty,
-            0,
         )
     } else {
         // Generate an external declaration.
         // FIXME(nagisa): investigate whether it can be changed into define_global
-        cx.declare_global(sym, llty, 0)
+        cx.declare_global(sym, llty)
     }
 }
 
@@ -229,7 +215,7 @@ impl<'ll> CodegenCx<'ll, '_> {
             let gv = match kind {
                 Some(kind) if !self.tcx.sess.fewer_names() => {
                     let name = self.generate_local_symbol_name(kind);
-                    let gv = self.define_global(&name, self.val_ty(cv), 0).unwrap_or_else(|| {
+                    let gv = self.define_global(&name, self.val_ty(cv)).unwrap_or_else(|| {
                         bug!("symbol `{}` is already defined", name);
                     });
                     llvm::LLVMRustSetLinkage(gv, llvm::Linkage::PrivateLinkage);
@@ -266,14 +252,13 @@ impl<'ll> CodegenCx<'ll, '_> {
 
         let g = if def_id.is_local() && !self.tcx.is_foreign_item(def_id) {
             let llty = self.layout_of(ty).llvm_type(self);
-            let address_space = if ty.is_wasm_special_static(self.tcx) { 1 } else { 0 };
             if let Some(g) = self.get_declared_value(sym) {
                 if self.val_ty(g) != self.type_ptr() {
                     span_bug!(self.tcx.def_span(def_id), "Conflicting types for static");
                 }
             }
 
-            let g = self.declare_global(sym, llty, address_space);
+            let g = self.declare_global(sym, llty);
 
             if !self.tcx.is_reachable_non_generic(def_id) {
                 unsafe {
@@ -393,7 +378,6 @@ impl<'ll> StaticMethods for CodegenCx<'ll, '_> {
 
             let instance = Instance::mono(self.tcx, def_id);
             let ty = instance.ty(self.tcx, ty::ParamEnv::reveal_all());
-            let address_space = if ty.is_wasm_special_static(self.tcx) { 1 } else { 0 };
             let llty = self.layout_of(ty).llvm_type(self);
             let g = if val_llty == llty {
                 g
@@ -411,7 +395,6 @@ impl<'ll> StaticMethods for CodegenCx<'ll, '_> {
                     name.as_ptr().cast(),
                     name.len(),
                     val_llty,
-                    /*AddressSpace=*/ address_space,
                 );
 
                 llvm::LLVMRustSetLinkage(new_g, linkage);

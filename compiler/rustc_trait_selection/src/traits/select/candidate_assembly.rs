@@ -12,9 +12,7 @@ use rustc_hir as hir;
 use rustc_infer::traits::ObligationCause;
 use rustc_infer::traits::{Obligation, PolyTraitObligation, SelectionError};
 use rustc_middle::ty::fast_reject::{DeepRejectCtxt, TreatParams};
-use rustc_middle::ty::layout::TyAndLayout;
-use rustc_middle::ty::{self, Ty, TyCtxt, TypeVisitableExt};
-use rustc_target::abi::Abi;
+use rustc_middle::ty::{self, Ty, TypeVisitableExt};
 
 use crate::traits;
 use crate::traits::query::evaluate_obligation::InferCtxtExt;
@@ -99,17 +97,7 @@ impl<'cx, 'tcx> SelectionContext<'cx, 'tcx> {
             } else if lang_items.tuple_trait() == Some(def_id) {
                 self.assemble_candidate_for_tuple(obligation, &mut candidates);
             } else if lang_items.pointer_like() == Some(def_id) {
-                self.assemble_candidate_for_layout_dependent(
-                    obligation,
-                    &mut candidates,
-                    |layout, tcx| layout.layout.is_pointer_like(&tcx.data_layout),
-                );
-            } else if lang_items.wasm_is_heap_ref() == Some(def_id) {
-                self.assemble_candidate_for_layout_dependent(
-                    obligation,
-                    &mut candidates,
-                    |layout, _tcx| matches!(layout.layout.abi(), Abi::WasmHeapRef { .. }),
-                );
+                self.assemble_candidate_for_pointer_like(obligation, &mut candidates);
             } else if lang_items.fn_ptr_trait() == Some(def_id) {
                 self.assemble_candidates_for_fn_ptr_trait(obligation, &mut candidates);
             } else {
@@ -1056,11 +1044,10 @@ impl<'cx, 'tcx> SelectionContext<'cx, 'tcx> {
         }
     }
 
-    fn assemble_candidate_for_layout_dependent(
+    fn assemble_candidate_for_pointer_like(
         &mut self,
         obligation: &PolyTraitObligation<'tcx>,
         candidates: &mut SelectionCandidateSet<'tcx>,
-        predicate: impl FnOnce(TyAndLayout<'tcx>, TyCtxt<'tcx>) -> bool,
     ) {
         // The regions of a type don't affect the size of the type
         let tcx = self.tcx();
@@ -1075,7 +1062,9 @@ impl<'cx, 'tcx> SelectionContext<'cx, 'tcx> {
             return;
         }
 
-        if let Ok(layout) = tcx.layout_of(key) && predicate(layout, tcx) {
+        if let Ok(layout) = tcx.layout_of(key)
+            && layout.layout.is_pointer_like(&tcx.data_layout)
+        {
             candidates.vec.push(BuiltinCandidate { has_nested: false });
         }
     }

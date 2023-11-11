@@ -156,14 +156,6 @@ fn layout_of_uncached<'tcx>(
         // Potentially-wide pointers.
         ty::Ref(_, pointee, _) | ty::RawPtr(ty::TypeAndMut { ty: pointee, .. }) => {
             let mut data_ptr = scalar_unit(Pointer(AddressSpace::DATA));
-
-            if pointee.is_wasm_special_static(tcx) {
-                // FIXME: This ties the layout very closesly to how LLVM
-                // represents it. It might be nicer to use a
-                // backend-independent representation.
-                data_ptr = scalar_unit(Pointer(AddressSpace(1)))
-            }
-
             if !ty.is_unsafe_ptr() {
                 data_ptr.valid_range_mut().start = 1;
             }

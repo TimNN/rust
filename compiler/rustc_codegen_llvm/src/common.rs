@@ -12,7 +12,7 @@ use rustc_data_structures::stable_hasher::{Hash128, HashStable, StableHasher};
 use rustc_hir::def_id::DefId;
 use rustc_middle::bug;
 use rustc_middle::mir::interpret::{ConstAllocation, GlobalAlloc, Scalar};
-use rustc_middle::ty::{self, Instance, TyCtxt};
+use rustc_middle::ty::TyCtxt;
 use rustc_session::cstore::{DllCallingConvention, DllImport, PeImportNameType};
 use rustc_target::abi::{self, AddressSpace, HasDataLayout, Pointer};
 use rustc_target::spec::Target;
@@ -197,7 +197,7 @@ impl<'ll, 'tcx> ConstMethods<'tcx> for CodegenCx<'ll, 'tcx> {
             .or_insert_with(|| {
                 let sc = self.const_bytes(s.as_bytes());
                 let sym = self.generate_local_symbol_name("str");
-                let g = self.define_global(&sym, self.val_ty(sc), 0).unwrap_or_else(|| {
+                let g = self.define_global(&sym, self.val_ty(sc)).unwrap_or_else(|| {
                     bug!("symbol `{}` is already defined", sym);
                 });
                 unsafe {
@@ -281,15 +281,7 @@ impl<'ll, 'tcx> ConstMethods<'tcx> for CodegenCx<'ll, 'tcx> {
                     GlobalAlloc::Static(def_id) => {
                         assert!(self.tcx.is_static(def_id));
                         assert!(!self.tcx.is_thread_local_static(def_id));
-
-                        let instance = Instance::mono(self.tcx, def_id);
-                        let ty = instance.ty(self.tcx, ty::ParamEnv::reveal_all());
-
-                        if ty.is_wasm_special_static(self.tcx) {
-                            (self.get_static(def_id), AddressSpace(1))
-                        } else {
-                            (self.get_static(def_id), AddressSpace::DATA)
-                        }
+                        (self.get_static(def_id), AddressSpace::DATA)
                     }
                 };
                 let llval = unsafe {

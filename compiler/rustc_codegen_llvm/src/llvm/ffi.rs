@@ -997,7 +997,6 @@ extern "C" {
         Name: *const c_char,
         NameLen: size_t,
         T: &'a Type,
-        AddressSapce: c_uint,
     ) -> &'a Value;
     pub fn LLVMRustInsertPrivateGlobal<'a>(M: &'a Module, T: &'a Type) -> &'a Value;
     pub fn LLVMGetFirstGlobal(M: &Module) -> Option<&Value>;

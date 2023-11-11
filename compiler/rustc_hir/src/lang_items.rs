@@ -330,8 +330,6 @@ language_item_table! {
     CStr,                    sym::CStr,                c_str,                      Target::Struct,         GenericRequirement::None;
 
     WasmExternTy,            sym::wasm_extern_ty,      wasm_extern_ty,             Target::ForeignTy,     GenericRequirement::None;
-    WasmTableTy,             sym::wasm_table_ty,       wasm_table_ty,              Target::Struct,        GenericRequirement::Exact(1);
-    WasmGlobalTy,            sym::wasm_global_ty,      wasm_global_ty,             Target::Struct,        GenericRequirement::Exact(1);
     WasmHeapRefTy,           sym::wasm_heap_ref_ty,    wasm_heap_ref_ty,           Target::Struct,        GenericRequirement::Exact(1);
     WasmHeapTypeRepr,        sym::wasm_heap_type_repr, wasm_heap_type_repr,        Target::Trait,         GenericRequirement::None;
     WasmIsHeapRef,           sym::wasm_is_heap_ref,    wasm_is_heap_ref,           Target::Trait,         GenericRequirement::None;
