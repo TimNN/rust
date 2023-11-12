@@ -1803,6 +1803,8 @@ symbols! {
         wasm_import_module,
         wasm_is_heap_ref,
         wasm_is_heap_ref_nullability,
+        wasm_nullability_marker_non_null,
+        wasm_nullability_marker_nullable,
         wasm_target_feature,
         while_let,
         width,

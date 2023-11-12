@@ -1065,8 +1065,19 @@ impl<'a, 'tcx> ImproperCTypesVisitor<'a, 'tcx> {
                     return FfiPhantom(ty);
                 }
                 if ty.is_wasm_heap_ref(tcx, self.cx.param_env) {
-                    // TODO: Take nullability into account.
-                    return FfiSafe;
+                    let repr = tcx.wasm_heap_type_repr(self.cx.param_env.and(ty));
+
+                    if repr.nullable {
+                        return FfiSafe;
+                    }
+
+                    return FfiUnsafe {
+                        ty,
+                        reason: DiagnosticMessage::Str(
+                            "LLVM (currently) assumes that Wasm heap refs are nullable.".into(),
+                        ),
+                        help: None,
+                    };
                 }
                 match def.adt_kind() {
                     AdtKind::Struct | AdtKind::Union => {

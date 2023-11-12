@@ -162,7 +162,13 @@ fn layout_of_uncached<'tcx>(
 
             let pointee = tcx.normalize_erasing_regions(param_env, pointee);
             if pointee.is_sized(tcx, param_env) {
-                return Ok(tcx.mk_layout(LayoutS::scalar(cx, data_ptr)));
+                let mut layout = LayoutS::scalar(cx, data_ptr);
+
+                if pointee.is_wasm_heap_ref(tcx, param_env) {
+                    layout.abi = Abi::Uninhabited;
+                }
+
+                return Ok(tcx.mk_layout(layout));
             }
 
             let metadata = if let Some(metadata_def_id) = tcx.lang_items().metadata_type()
@@ -456,6 +462,10 @@ fn layout_of_uncached<'tcx>(
         // ADTs.
         ty::Adt(def, args) => {
             if Some(def.did()) == tcx.lang_items().wasm_heap_ref_ty() {
+                if ty.has_param() {
+                    return Err(error(cx, LayoutError::Unknown(ty)));
+                }
+
                 return Ok(tcx.mk_layout(LayoutS::wasm_heap_ref(/*nullable=*/ false)));
             }
 

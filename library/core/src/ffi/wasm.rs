@@ -51,7 +51,7 @@ impl<T: HeapTypeRepr + ?Sized> Copy for HeapRef<T> {}
 
 impl<T: HeapTypeRepr + ?Sized> Clone for HeapRef<T> {
     fn clone(&self) -> Self {
-        unreachable!();
+        match self {}
     }
 }
 
@@ -73,7 +73,10 @@ pub trait IsHeapRef {
 
 #[unstable(feature = "wasm_heap_types_v1", issue = "none")]
 pub mod nullability_marker {
+    #[lang = "wasm_nullability_marker_non_null"]
     pub enum NonNull {}
+
+    #[lang = "wasm_nullability_marker_nullable"]
     pub enum Nullable {}
 }
 
@@ -115,6 +118,6 @@ impl Copy for ExternRef {}
 
 impl Clone for ExternRef {
     fn clone(&self) -> Self {
-        unreachable!();
+        match self {}
     }
 }

@@ -122,6 +122,12 @@ impl<'tcx> Ty<'tcx> {
             Tuple(tys) if tys.is_empty() => InhabitedPredicate::True,
             // use a query for more complex cases
             Adt(..) | Array(..) | Tuple(_) => tcx.inhabited_predicate_type(self),
+            // Wasm special-cases.
+            Ref(_, pointee, _) | RawPtr(ty::TypeAndMut { ty: pointee, .. })
+                if tcx.sess.target.is_like_wasm =>
+            {
+                InhabitedPredicate::NotWasmHeapRef(*pointee)
+            }
             // references and other types are inhabited
             _ => InhabitedPredicate::True,
         }

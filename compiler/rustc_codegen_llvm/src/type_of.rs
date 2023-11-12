@@ -39,6 +39,8 @@ fn uncached_llvm_type<'a, 'tcx>(
         Abi::WasmHeapRef { nullable } => {
             use ty::util::WasmHeapType::*;
 
+            let heap_ty = cx.tcx.wasm_heap_type_repr(cx.param_env().and(layout.ty)).heap_ty;
+
             // LLVM currently only has support for the built-in `externref`
             // type, which is nullable by definition.
             //
@@ -47,7 +49,7 @@ fn uncached_llvm_type<'a, 'tcx>(
             // cannot be enforced by Rust's type system.
             let _ = nullable;
 
-            return match cx.tcx.wasm_heap_type_repr(cx.param_env().and(layout.ty)).heap_ty {
+            return match heap_ty {
                 Extern => cx.type_wasm_externref(),
             };
         }

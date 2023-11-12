@@ -23,9 +23,24 @@ pub(super) fn sanity_check_layout<'tcx>(
         bug!("size is too large, in the following layout:\n{layout:#?}");
     }
 
+    if let Abi::WasmHeapRef { nullable } = layout.abi {
+        assert!(layout.ty.is_wasm_heap_ref(cx.tcx, cx.param_env));
+        let repr = cx.tcx.wasm_heap_type_repr(cx.param_env.and(layout.ty));
+        assert_eq!(
+            nullable,
+            repr.nullable,
+            "ABI and repr disagree on nullability of {ty}",
+            ty = layout.ty
+        );
+    }
+
     if !cfg!(debug_assertions) {
         // Stop here, the rest is kind of expensive.
         return;
+    }
+
+    if layout.ty.is_wasm_heap_ref(cx.tcx, cx.param_env) {
+        assert_matches!(layout.abi, Abi::WasmHeapRef { .. });
     }
 
     /// Yields non-ZST fields of the type

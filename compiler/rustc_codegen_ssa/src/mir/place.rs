@@ -212,6 +212,16 @@ impl<'a, 'tcx, V: CodegenObject> PlaceRef<'tcx, V> {
         if self.layout.abi.is_uninhabited() {
             return bx.cx().const_poison(cast_to);
         }
+        if let Abi::WasmHeapRef { nullable } = self.layout.abi {
+            if !nullable {
+                bug!("Non-null WasmHeapRef does not have a discriminant.");
+            }
+
+            let _heap_ty =
+                bx.cx().tcx().wasm_heap_type_repr(bx.param_env().and(self.layout.ty)).heap_ty;
+
+            bug!("unimpemented: WasmHeapRef nullability");
+        }
         let (tag_scalar, tag_encoding, tag_field) = match self.layout.variants {
             Variants::Single { index } => {
                 let discr_val = self

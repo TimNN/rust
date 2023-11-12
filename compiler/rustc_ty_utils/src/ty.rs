@@ -357,49 +357,75 @@ fn wasm_heap_type_repr<'tcx>(
 ) -> ty::util::WasmHeapTypeRepr {
     use ty::util::WasmHeapType::*;
 
-    let _ = LangItem::WasmHeapTypeRepr;
-    let _ = (tcx, query);
-
-    // TODO
-    return ty::util::WasmHeapTypeRepr { heap_ty: Extern, nullable: true };
-
-    // TODO
-
-    /*
     let (param_env, ty) = query.into_parts();
-    let proj =
-        Ty::new_projection(tcx, tcx.require_lang_item(LangItem::WasmHeapTypeRepr, None), [ty]);
-    let repr = tcx.normalize_erasing_regions(param_env, proj);
 
-    let ty::Adt(wrapper_def, args) = repr.kind() else {
-        bug!("Invalid WasmHeapTypeRepr: `{repr}`");
+    if !ty.is_wasm_heap_ref(tcx, param_env) {
+        bug!(
+            "`wasm_heap_type_repr` called for type that does not implement `IsWasmHeapRef`: {ty}."
+        );
+    }
+
+    let ty::Adt(def, args) = ty.kind() else {
+        bug!("Invalid Wasm Heap Ref type, not an ADT: {ty}");
     };
 
-    let [arg] = args.as_slice() else {
-        bug!("Invalid WasmHeapTypeRepr: `{repr}`");
-    };
+    // Check if we got to the "leaf" `HeapRef` type.
+    if def.did() == tcx.require_lang_item(LangItem::WasmHeapRefTy, None) {
+        let [arg] = args.as_slice() else {
+            bug!("Unexpected `HeapRef` shape (bad generic arg count): `{ty}`");
+        };
 
-    let Some(raw_ty) = arg.as_type() else {
-        bug!("Invalid WasmHeapTypeRepr: `{repr}`");
-    };
+        let Some(arg_ty) = arg.as_type() else {
+            bug!("Unexpected `HeapRef` shape (bad generic arg kind): `{ty}`");
+        };
 
-    let nullable = match wrapper_def.did() {
-        did if did == tcx.require_lang_item(LangItem::WasmHeapReprDirect, None) => {
-            bug!("`wasm_heap_type_repr` called with non-WasmHeapRef type: {ty}");
+        let heap_ty = match arg_ty.kind() {
+            ty::Foreign(def) if *def == tcx.require_lang_item(LangItem::WasmExternTy, None) => {
+                Extern
+            }
+            _ => bug!("Unsupported `HeapTypeRepr`: `{arg_ty}` ({:?})", ty.flags()),
+        };
+
+        return ty::util::WasmHeapTypeRepr { heap_ty, nullable: false };
+    }
+
+    // If not, then we should have exactly one non-ZST field.
+    let mut non_trivial_field = None;
+    for field in def.all_fields() {
+        let field_ty = field.ty(tcx, args);
+        if tcx.layout_of(param_env.and(field_ty)).is_ok_and(|layout| layout.is_1zst()) {
+            continue;
         }
-        did if did == tcx.require_lang_item(LangItem::WasmHeapReprNonNull, None) => false,
-        did if did == tcx.require_lang_item(LangItem::WasmHeapReprNullable, None) => true,
-        _ => bug!("Invalid WasmHeapTypeRepr: `{repr}`"),
+
+        if let Some(_) = non_trivial_field {
+            bug!("Unexpected `IsWasmHeapRef` type (multiple non-trivial): {ty}");
+        }
+
+        non_trivial_field = Some(field_ty);
+    }
+
+    let Some(field_ty) = non_trivial_field else {
+        bug!("Unexpected `IsWasmHeapRef` type (no non-trivial): {ty}");
     };
 
-    let heap_ty = match raw_ty.kind() {
-        ty::Foreign(def) if *def == tcx.require_lang_item(LangItem::WasmExternTy, None) => Extern,
-        _ => bug!("Unsupported raw Wasm type: `{raw_ty}`"),
+    // For which we can recursively query the representation.
+    let field_repr = tcx.wasm_heap_type_repr(param_env.and(field_ty));
+
+    let nullability_item = tcx.require_lang_item(LangItem::WasmIsHeapRefNullability, None);
+    let nullability_proj = Ty::new_projection(tcx, nullability_item, [ty]);
+    let nullability_ty = tcx.normalize_erasing_regions(param_env, nullability_proj);
+
+    let ty::Adt(nullability_def, _) = nullability_ty.kind() else {
+        bug!("Invalid `IsWasmHeapRef::Nullability` (not an ADT): `{nullability_ty}`");
     };
 
-    ty::util::WasmHeapTypeRepr { heap_ty, nullable }
+    let nullable = match nullability_def.did() {
+        did if did == tcx.require_lang_item(LangItem::WasmNullabilityMarkerNonNull, None) => false,
+        did if did == tcx.require_lang_item(LangItem::WasmNullabilityMarkerNullable, None) => true,
+        _ => bug!("Invalid `IsWasmHeapRef::Nullability` (unknown): `{nullability_ty}`"),
+    };
 
-    */
+    ty::util::WasmHeapTypeRepr { heap_ty: field_repr.heap_ty, nullable }
 }
 
 pub fn provide(providers: &mut Providers) {

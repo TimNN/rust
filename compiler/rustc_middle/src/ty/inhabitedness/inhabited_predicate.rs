@@ -25,6 +25,9 @@ pub enum InhabitedPredicate<'tcx> {
     And(&'tcx [InhabitedPredicate<'tcx>; 2]),
     /// A OR B
     Or(&'tcx [InhabitedPredicate<'tcx>; 2]),
+    /// Uninhabited if the given type is a WebAssembly heap reference. (The
+    /// given type will ususally be the pointee of a raw pointer or reference).
+    NotWasmHeapRef(Ty<'tcx>),
 }
 
 impl<'tcx> InhabitedPredicate<'tcx> {
@@ -76,6 +79,7 @@ impl<'tcx> InhabitedPredicate<'tcx> {
             }
             Self::And([a, b]) => try_and(a, b, |x| x.apply_inner(tcx, param_env, in_module)),
             Self::Or([a, b]) => try_or(a, b, |x| x.apply_inner(tcx, param_env, in_module)),
+            Self::NotWasmHeapRef(t) => Ok(!t.is_wasm_heap_ref(tcx, param_env)),
         }
     }
 
