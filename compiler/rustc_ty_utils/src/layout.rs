@@ -462,6 +462,7 @@ fn layout_of_uncached<'tcx>(
         // ADTs.
         ty::Adt(def, args) => {
             if Some(def.did()) == tcx.lang_items().wasm_heap_ref_ty() {
+                // TODO: Check for anyting else (e.g. projections)?
                 if ty.has_param() {
                     return Err(error(cx, LayoutError::Unknown(ty)));
                 }
