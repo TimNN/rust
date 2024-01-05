@@ -370,7 +370,8 @@ fn wasm_heap_type_repr<'tcx>(
     };
 
     // Check if we got to the "leaf" `HeapRef` type.
-    if def.did() == tcx.require_lang_item(LangItem::WasmHeapRefTy, None) {
+    // TODO: Rewrite.
+    if def.did() == tcx.require_lang_item(LangItem::WasmHeapRef, None) {
         let [arg] = args.as_slice() else {
             bug!("Unexpected `HeapRef` shape (bad generic arg count): `{ty}`");
         };
@@ -411,7 +412,7 @@ fn wasm_heap_type_repr<'tcx>(
     // For which we can recursively query the representation.
     let field_repr = tcx.wasm_heap_type_repr(param_env.and(field_ty));
 
-    let nullability_item = tcx.require_lang_item(LangItem::WasmIsHeapRefNullability, None);
+    let nullability_item = tcx.require_lang_item(LangItem::WasmHeapRefNullability, None);
     let nullability_proj = Ty::new_projection(tcx, nullability_item, [ty]);
     let nullability_ty = tcx.normalize_erasing_regions(param_env, nullability_proj);
 

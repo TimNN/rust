@@ -209,7 +209,9 @@ declare_features! (
     (internal, test_unstable_lint, "1.60.0", None, None),
     /// Allows non-`unsafe` —and thus, unsound— access to `Pin` constructions.
     /// Marked `internal` since perma-unstable and unsound.
-    (internal, unsafe_pin_internals, "1.60.0", None, None),
+    (internal, unsafe_pin_internals, "1.76.0", None, None),
+    /// TODO: document
+    (internal, wasm_heap_traits_unrestricted_impl, "CURRENT_RUSTC_VERSION", None, None),
     /// Use for stable + negative coherence and strict coherence depending on trait's
     /// rustc_strict_coherence value.
     (unstable, with_negative_coherence, "1.60.0", None, None),

@@ -24,7 +24,12 @@ fn is_unpin_raw<'tcx>(tcx: TyCtxt<'tcx>, query: ty::ParamEnvAnd<'tcx, Ty<'tcx>>)
 
 fn is_wasm_heap_ref_raw<'tcx>(tcx: TyCtxt<'tcx>, query: ty::ParamEnvAnd<'tcx, Ty<'tcx>>) -> bool {
     // TODO
-    is_item_raw(tcx, query, LangItem::WasmIsHeapRef)
+    is_item_raw(tcx, query, LangItem::WasmHeapRef)
+}
+
+fn is_wasm_heap_type_raw<'tcx>(tcx: TyCtxt<'tcx>, query: ty::ParamEnvAnd<'tcx, Ty<'tcx>>) -> bool {
+    // TODO
+    is_item_raw(tcx, query, LangItem::WasmHeapType)
 }
 
 fn is_item_raw<'tcx>(
@@ -45,6 +50,7 @@ pub(crate) fn provide(providers: &mut Providers) {
         is_freeze_raw,
         is_unpin_raw,
         is_wasm_heap_ref_raw,
+        is_wasm_heap_type_raw,
         ..*providers
     };
 }

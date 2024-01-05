@@ -1348,6 +1348,10 @@ rustc_queries! {
     query is_wasm_heap_ref_raw(env: ty::ParamEnvAnd<'tcx, Ty<'tcx>>) -> bool {
         desc { "computing whether `{}` is a Wasm heap ref", env.value }
     }
+    /// Query backing `Ty::is_wasm_heap_type`.
+    query is_wasm_heap_type_raw(env: ty::ParamEnvAnd<'tcx, Ty<'tcx>>) -> bool {
+        desc { "computing whether `{}` is a Wasm heap type", env.value }
+    }
     /// Query backing `Ty::needs_drop`.
     query needs_drop_raw(env: ty::ParamEnvAnd<'tcx, Ty<'tcx>>) -> bool {
         desc { "computing whether `{}` needs drop", env.value }

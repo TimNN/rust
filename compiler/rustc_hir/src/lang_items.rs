@@ -329,11 +329,10 @@ language_item_table! {
     String,                  sym::String,              string,                     Target::Struct,         GenericRequirement::None;
     CStr,                    sym::CStr,                c_str,                      Target::Struct,         GenericRequirement::None;
 
-    WasmExternTy,            sym::wasm_extern_ty,      wasm_extern_ty,             Target::ForeignTy,     GenericRequirement::None;
-    WasmHeapRefTy,           sym::wasm_heap_ref_ty,    wasm_heap_ref_ty,           Target::Struct,        GenericRequirement::Exact(1);
-    WasmHeapTypeRepr,        sym::wasm_heap_type_repr, wasm_heap_type_repr,        Target::Trait,         GenericRequirement::None;
-    WasmIsHeapRef,           sym::wasm_is_heap_ref,    wasm_is_heap_ref,           Target::Trait,         GenericRequirement::None;
-    WasmIsHeapRefNullability,      sym::wasm_is_heap_ref_nullability,     wasm_is_heap_ref_nullability,     Target::AssocTy, GenericRequirement::None;
+    WasmExternTy,            sym::wasm_extern_ty,      wasm_extern_ty,             Target::ForeignTy,      GenericRequirement::None;
+    WasmHeapType,            sym::wasm_heap_type,      wasm_heap_type,             Target::Trait,          GenericRequirement::None;
+    WasmHeapRef,             sym::wasm_heap_ref,       wasm_heap_ref,              Target::Trait,          GenericRequirement::None;
+    WasmHeapRefNullability,        sym::wasm_heap_ref_nullability,        wasm_heap_ref_nullability,        Target::AssocTy, GenericRequirement::None;
     WasmNullabilityMarkerNonNull,  sym::wasm_nullability_marker_non_null, wasm_nullability_marker_non_null, Target::Enum,    GenericRequirement::None;
     WasmNullabilityMarkerNullable, sym::wasm_nullability_marker_nullable, wasm_nullability_marker_nullable, Target::Enum,    GenericRequirement::None;
 }

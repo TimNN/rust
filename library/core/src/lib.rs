@@ -192,6 +192,7 @@
 #![feature(utf16_extra)]
 #![feature(utf16_extra_const)]
 #![feature(variant_count)]
+#![feature(wasm_heap_traits_unrestricted_impl)]
 // tidy-alphabetical-end
 //
 // Language features:

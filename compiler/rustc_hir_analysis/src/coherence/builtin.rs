@@ -33,7 +33,8 @@ pub fn check_trait(tcx: TyCtxt<'_>, trait_def_id: DefId) {
         .check(lang_items.const_param_ty_trait(), visit_implementation_of_const_param_ty)
         .check(lang_items.coerce_unsized_trait(), visit_implementation_of_coerce_unsized)
         .check(lang_items.dispatch_from_dyn_trait(), visit_implementation_of_dispatch_from_dyn)
-        .check(lang_items.wasm_is_heap_ref(), visit_implementation_of_wasm_is_heap_ref);
+        .check(lang_items.wasm_heap_ref(), visit_implementation_of_wasm_heap_ref)
+        .check(lang_items.wasm_heap_type(), visit_implementation_of_wasm_heap_type);
 }
 
 struct Checker<'tcx> {
@@ -68,7 +69,21 @@ fn visit_implementation_of_drop(tcx: TyCtxt<'_>, impl_did: LocalDefId) {
     tcx.sess.emit_err(errors::DropImplOnWrongItem { span: impl_.self_ty.span });
 }
 
-fn visit_implementation_of_wasm_is_heap_ref(tcx: TyCtxt<'_>, impl_did: LocalDefId) {
+fn visit_implementation_of_wasm_heap_ref(tcx: TyCtxt<'_>, impl_did: LocalDefId) {
+    visit_implementation_of_wasm_heap_trait(tcx, impl_did, true);
+}
+
+fn visit_implementation_of_wasm_heap_type(tcx: TyCtxt<'_>, impl_did: LocalDefId) {
+    visit_implementation_of_wasm_heap_trait(tcx, impl_did, false);
+}
+
+fn visit_implementation_of_wasm_heap_trait(tcx: TyCtxt<'_>, impl_did: LocalDefId, is_ref: bool) {
+    if tcx.features().wasm_heap_traits_unrestricted_impl {
+        return;
+    }
+
+    let trait_name = if is_ref { "HeapRef" } else { "HeapType" };
+
     let self_type = tcx.type_of(impl_did).instantiate_identity();
     let impl_ = tcx.hir().expect_item(impl_did).expect_impl();
 
@@ -80,23 +95,16 @@ fn visit_implementation_of_wasm_is_heap_ref(tcx: TyCtxt<'_>, impl_did: LocalDefI
         _ => {
             tcx.sess.span_err(
                 impl_.self_ty.span,
-                "`IsHeapRef` may only be implemented for local types.",
+                format!("`{trait_name}` may only be implemented for local types."),
             );
             return;
         }
     };
 
-    // Exempt certain assumed-correct built-in impls from the remaining checks.
-    if Some(def.did()) == tcx.lang_items().option_type()
-        || Some(def.did()) == tcx.lang_items().wasm_heap_ref_ty()
-    {
-        return;
-    }
-
     if !def.is_struct() {
         tcx.sess.span_err(
             impl_.self_ty.span,
-            "`IsHeapRef` may only be implemented for `struct` types.",
+            format!("`{trait_name}` may only be implemented for `struct` types."),
         );
         return;
     }
@@ -104,7 +112,7 @@ fn visit_implementation_of_wasm_is_heap_ref(tcx: TyCtxt<'_>, impl_did: LocalDefI
     if !def.repr().transparent() {
         tcx.sess.span_err(
             impl_.self_ty.span,
-            "`IsHeapRef` may only be implemented for `#[repr(transparent)]` types.",
+            format!("`{trait_name}` may only be implemented for `#[repr(transparent)]` types."),
         );
         return;
     }
@@ -133,20 +141,29 @@ fn visit_implementation_of_wasm_is_heap_ref(tcx: TyCtxt<'_>, impl_did: LocalDefI
     let Some((field, field_ty)) = non_trivial_field else {
         tcx.sess.span_err(
             impl_.self_ty.span,
-            "`IsHeapRef` implemented for type that does not contain a `IsHeapRef` field.",
+            format!(
+                "`{trait_name}` implemented for type that does not contain a `IsHeapRef` field."
+            ),
         );
         return;
     };
 
-    if !field_ty.is_wasm_heap_ref(tcx, param_env) {
+    let check_fn = if is_ref { Ty::is_wasm_heap_ref } else { Ty::is_wasm_heap_type };
+
+    if !check_fn(field_ty, tcx, param_env) {
         tcx.sess.span_err(
             impl_.self_ty.span,
-            format!("Field {} ({}) does not implement `IsHeapRef`.", field.name, field_ty),
+            format!("Field {} ({}) does not implement `{trait_name}`.", field.name, field_ty),
         );
         return;
     }
 
-    let nullability_item = tcx.require_lang_item(LangItem::WasmIsHeapRefNullability, None);
+    if !is_ref {
+        // Nullability check only applies to `HeapRef`.
+        return;
+    }
+
+    let nullability_item = tcx.require_lang_item(LangItem::WasmHeapRefNullability, None);
 
     let self_proj = Ty::new_projection(tcx, nullability_item, [self_type]);
     let self_nullability = tcx.normalize_erasing_regions(param_env, self_proj);
